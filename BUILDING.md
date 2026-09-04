@@ -65,6 +65,16 @@ Or specify another game directory:
 .\tools\package.ps1 -Install -GameRoot 'D:\SteamLibrary\steamapps\common\How to Fish\How to Fish'
 ```
 
+## Create a GitHub release ZIP
+
+To create the upload-ready GitHub archive, run:
+
+```powershell
+.\tools\package-github-release.ps1
+```
+
+This writes `release/HowToFishXR-v1.0.0.zip`. The archive includes only the mod, its XR runtime components, installation/readme files and media, changelog, license, and NOTICE. It does not bundle BepInEx; users must install `BepInEx-BepInExPack-5.4.2305` first.
+
 ## Public CI checks
 
 GitHub Actions validates the repository layout, project metadata, JSON, PowerShell syntax, accidental diagnostic logging, and the absence of private/proprietary files. A full binary compilation remains local because the game reference assemblies cannot be legally committed to the public repository.

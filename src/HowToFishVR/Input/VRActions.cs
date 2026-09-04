@@ -110,12 +110,12 @@ public class VRActions
         return ReadQuat(fallback);
     }
 
-    public Vector3 MainHandPos => VRConfig.Handedness.Value == DominantHand.Right ? RightPos : LeftPos;
-    public Quaternion MainHandRot => VRConfig.Handedness.Value == DominantHand.Right ? RightRot : LeftRot;
-    public Vector3 OffHandPos => VRConfig.Handedness.Value == DominantHand.Right ? LeftPos : RightPos;
-    public Quaternion OffHandRot => VRConfig.Handedness.Value == DominantHand.Right ? LeftRot : RightRot;
-    public float OffHandGrip => VRConfig.Handedness.Value == DominantHand.Right ? LeftGrip.ReadValue<float>() : RightGrip.ReadValue<float>();
-    public float MainHandGrip => VRConfig.Handedness.Value == DominantHand.Right ? RightGrip.ReadValue<float>() : LeftGrip.ReadValue<float>();
+    public Vector3 MainHandPos => RightPos;
+    public Quaternion MainHandRot => RightRot;
+    public Vector3 OffHandPos => LeftPos;
+    public Quaternion OffHandRot => LeftRot;
+    public float OffHandGrip => LeftGrip.ReadValue<float>();
+    public float MainHandGrip => RightGrip.ReadValue<float>();
 
     private static Quaternion ReadQuat(InputAction a)
     {

@@ -101,8 +101,7 @@ internal static class PlayerHandsPatches
         var gripTarget = PlayerToolMovementPatches.OffHandGripTarget;
         if (gripTarget != null)
         {
-            bool offIsLeft = VRConfig.Handedness.Value == DominantHand.Right;
-            var offBone = offIsLeft ? lb : rb;
+            var offBone = lb;
             if (offBone != null) offBone.SetPositionAndRotation(gripTarget.position, gripTarget.rotation);
         }
 
@@ -121,8 +120,7 @@ internal static class PlayerHandsPatches
             }
             else
             {
-                bool mainIsLeft = VRConfig.Handedness.Value == DominantHand.Left;
-                var mainBone = mainIsLeft ? lb : rb;
+                var mainBone = rb;
                 if (mainBone != null) mainBone.SetPositionAndRotation(mainGripTarget.position, mainGripTarget.rotation);
             }
         }
@@ -149,8 +147,8 @@ internal static class PlayerHandsPatches
                 if (VRHeldItem.FishTwoHand && held is DeadPlayer dp && dp._slapHandAnim != null &&
                     dp._isResurrecting && dp._slapHandAnim.transform != null)
                 {
-                    bool offIsLeft = VRConfig.Handedness.Value == DominantHand.Right;
-                    var offBone = offIsLeft ? lb : rb;
+                    const bool offIsLeft = true;
+                    var offBone = lb;
                     var slapT = dp._slapHandAnim.transform;
                     if (offBone != null && slapT != null)
                     {
@@ -195,8 +193,8 @@ internal static class PlayerHandsPatches
                 }
                 else
                 {
-                    var mainBone = VRConfig.Handedness.Value == DominantHand.Left ? lb : rb;
-                    var ht = VRConfig.Handedness.Value == DominantHand.Right ? held.HandTransformsRight : held.HandTransformsLeft;
+                    var mainBone = rb;
+                    var ht = held.HandTransformsRight;
                     if (ht != null && ht.Exists && ht.Parent != null && mainBone != null)
                         mainBone.position = ht.Parent.TransformPoint(ht.HandPos);
                 }

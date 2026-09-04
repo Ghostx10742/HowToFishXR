@@ -95,59 +95,34 @@ At some angles the finger on the left/support hand can look twisted. That shape 
   <img src="docs/assets/left-hand-finger-note.jpg" width="800" alt="The original mirrored left-hand finger geometry visible in VR">
 </p>
 
-## Complete feature list
+## Features
 
 ### VR rendering and tracking
 
-- Full stereoscopic 6DoF head tracking through Unity OpenXR, with the newest predicted head and hand poses applied immediately before rendering.
-- Tracked left and right hands with permanent, headset-tested wrist/palm calibration.
-- Full roomscale leaning, walking, and physical crouching with collision-aware body movement.
-- Snap turning with configurable angle or smooth turning with configurable speed.
-- Recenter support and guided T-pose height/body calibration with controller haptics.
-- The game's native eye height is used permanently; there is no artificial height-offset slider.
-- A one-eye desktop mirror shows the live VR view instead of a black or split stereo window.
-- The main-menu camera rides the moving boat and remains stable through focus changes and menu interactions.
-- Character customization is repositioned for VR so the avatar, arrows, and menu remain usable.
-- VR can be disabled without uninstalling the mod for a normal flat-screen launch.
+- Full stereoscopic 6DoF OpenXR tracking with render-timed head and hand poses, roomscale movement, physical crouching, recentering, and height calibration.
+- Snap and smooth turning, a clean one-eye desktop mirror, and a stable moving-boat main menu.
+- Permanent tested hand placement, right-hand primary controls, and the game's native eye height.
+- VR-ready character customization plus optional flat-screen launching without uninstalling the mod.
 
 ### Body and multiplayer
 
-- Optional full visible player body restored from the game's own character model.
-- Controller-driven two-bone arm IK with natural elbow poles, shoulder reach correction, and render-timed solving.
-- Hands Only mode for players who do not want the full body rendered.
-- The body stays aligned through roomscale motion, snap turns, boats, death, respawning, scene changes, and rejoining.
-- The body remains visible while riding a boat and hides only while actively driving it.
-- VR head, hand, arm, foot, body, held-tool, and fishing-line poses sync through the game's FishNet transport when the host and receiving players have the mod.
-- Modded flat-screen players can receive and display VR players' poses. Vanilla hosts remain unaffected; without the mod on the host, extra VR pose broadcasting simply does not start.
+- Full-body IK or Hands Only mode, with render-timed arms and body alignment through turning, boats, death, respawning, and scene changes.
+- The body remains visible as a passenger and hides only while driving.
+- Multiplayer syncing for VR body, hands, tools, and fishing poses between modded players; vanilla lobbies remain compatible.
 
 ### Hands, items, and combat
 
-- Tools and weapons follow the dominant controller using each item's authored grip pose.
-- One- and two-handed gun handling with support-hand steering, physical sights, muzzle-correct shots, and game-authored accuracy/recoil.
-- Fishing rods use the same calibrated hand anchor as guns and remain main-hand driven while the reel hand latches visually.
-- Fish, creatures, food, dead bodies, and other non-tool items are held with the game's physics-based movement rather than being frozen to the camera.
-- Fish remain one-handed so their secondary physics can move naturally.
-- Two-handing a normal non-tool item or dead body latches only the support hand; it does not take control away from the main hand or stretch the object.
-- Dead-body carrying keeps ragdoll physics and the revive slap presentation.
-- TNT stays in the main hand while its lighter is correctly placed in the support hand.
-- Brass knuckles are positioned independently on both tracked hands; punching uses head aim and removes the canned flat-screen knuckle/punch pose.
-- Empty-hand punching also uses head aim and cannot target or damage the local player's own restored body.
-- Held items do not play the flat-screen sprint indent/tuck animation.
-- Charged throws preserve the game's force while blending the calibrated hand direction, controller release velocity, and wrist motion for better aiming.
+- Physical fishing casts and reeling, calibrated rod handling, and one- or two-handed guns with support-hand steering, physical sights, recoil, and muzzle-correct shots.
+- Physics-aware holding and throwing for fish, food, creatures, and other items; fish stay one-handed while normal items can visually latch the support hand.
+- Ragdoll body carrying and reviving, correctly placed TNT/lighter and brass knuckles, plus head-aimed empty-hand and knuckle punching.
+- Game-authored grip poses are preserved while flat-screen sprint tuck, punch, sniper-overlay, and forced zoom animations are removed where inappropriate for VR.
 
 ### UI, menus, and visual feedback
 
-- The real game HUD, main menu, pause menu, settings screens, dialogue, prompts, and overlays are converted into readable VR panels rather than replaced with a separate flat interface.
-- A right-hand laser supports accurate clicking and dragging, including sliders and moving main-menu panels.
-- A native-styled **VR Settings** entry is added to both the main and pause menus.
-- HUD distance and scale are configurable; head-following keeps the HUD level instead of pitching it into the player's face.
-- World item dots remain attached to their items, keep the game's distance scaling and height behavior, and render through walls as the base game intends.
-- Caught-fish notices, item information and prices, hit markers, NPC dialogue, inventory, bait text, and other camera-projected UI are corrected for VR space.
-- The actual death UI is presented head-locked at full-view scale, with a recreated translucent dark backdrop and first- or third-person death viewing.
-- The game's underwater color/tint state follows the rendered VR camera, including while dead, and clears immediately when the view leaves the water.
-- Blood, poison, fire, damage, dying, and low-health vignette feedback are reproduced in the headset.
-- The game's frosted-glass UI blur is preserved through a safe persistent capture; a flat dark fallback is available if a system renders the blur incorrectly.
-- The flat-screen sniper overlay and zoom are removed in favor of physical scope use.
+- The real HUD, main/pause/settings menus, dialogue, prompts, inventory, item information, and character creator are converted into usable VR panels.
+- Accurate right-hand laser clicking and dragging, configurable HUD scale, and level head-following.
+- World-pinned item dots retain native distance scaling and render through walls.
+- VR-correct death UI, underwater visuals, damage/status overlays, caught-fish notices, hit markers, physical scopes, and frosted-glass UI blur.
 
 ## VR Settings menu
 
@@ -159,17 +134,14 @@ Open the native-styled **VR Settings** page from the main menu or pause menu. Yo
 | Turning | Snap or Smooth turning |
 | Snap Angle | Degrees rotated per snap turn |
 | Smooth Speed | Smooth-turn degrees per second |
-| Dominant Hand | Which hand owns tools, aiming, and primary item control |
 | Roomscale Movement | Physical walking and crouching move the game body |
-| VR Post Processing | Uses the game's color grading and underwater post effects in the headset |
 | Sprint Mode | Hold or Toggle |
 | Crouch Mode | Hold or Toggle |
 | HUD Scale | Size of the VR HUD |
-| HUD Distance | Distance of the HUD from the headset |
 | Death View | First-person ragdoll view or head-tracked third-person view |
 | Calibrate | Starts the guided standing T-pose calibration |
 
-Hand position/rotation sliders, the height-offset slider, and motion-vignette options are intentionally not present. The tested hand calibration is built into the mod, player height uses the game's native height, and there is no forced motion vignette.
+Dominant-hand, HUD-distance, VR post-processing, hand position/rotation, height-offset, and motion-vignette controls are intentionally not present. The primary hand is permanently right, HUD distance and hand calibration use their tested values, the tested VR visual-effects path is always used, player height uses the game's native height, and there is no forced motion vignette.
 
 ### Advanced BepInEx settings
 
@@ -201,14 +173,14 @@ For persistent flat-screen mode, set `Disable VR = true` in `BepInEx/config/com.
 
 ## Installation
 
-The first public package will be attached to the [GitHub Releases](https://github.com/Ghostx10742/HowToFishXR/releases) page. Thunderstore packaging is intentionally not included yet.
+The GitHub package will be attached to the [GitHub Releases](https://github.com/Ghostx10742/HowToFishXR/releases) page. It contains HowToFishXR, its required XR components, [INSTALL.md](INSTALL.md), this README, the changelog, license, and NOTICE. **BepInEx is required and is not bundled.** This is a GitHub release package, not a Thunderstore package; Thunderstore packaging is intentionally not included yet.
 
 1. Install [BepInEx 5](https://thunderstore.io/c/how-to-fish/p/BepInEx/BepInExPack/).
 2. Download the latest HowToFishXR release archive.
 3. Extract the archive into the folder containing `How to Fish.exe` and allow folders to merge.
 4. Start an OpenXR runtime, then launch the game through Steam.
 
-Developers who want to compile the source should follow [BUILDING.md](BUILDING.md). Game assemblies, logs, dumps, backups, and decompiled game files are deliberately not included in this repository.
+Developers who want to compile the source should follow the build-from-source section below and [BUILDING.md](BUILDING.md). Game assemblies, logs, dumps, backups, and decompiled game files are deliberately not included in this repository.
 
 ## Compatibility
 
@@ -216,9 +188,45 @@ HowToFishXR changes the camera, input, player-body presentation, item handling, 
 
 If a game update changes the relevant methods or assets, the mod may require an update. Please include the game version, headset/runtime, and clear reproduction steps in bug reports—never upload personal or unrelated logs without reviewing them first.
 
-## Building and contributing
+## Build from source
 
-See [BUILDING.md](BUILDING.md) for local compilation and packaging. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Proprietary game assemblies and locally generated reference files must never be committed.
+Building requires Windows, PowerShell, the .NET 8 SDK, an installed copy of **How to Fish**, BepInEx 5, and the matching Unity/OpenXR dependencies. Proprietary game assemblies are not distributed in this repository.
+
+1. Clone the repository and enter it:
+
+   ```powershell
+   git clone https://github.com/Ghostx10742/HowToFishXR.git
+   Set-Location .\HowToFishXR
+   ```
+
+2. Put your legally obtained compile-time dependencies in `lib/` as described in [BUILDING.md](BUILDING.md), then generate the publicized game references:
+
+   ```powershell
+   .\tools\publicize.ps1
+   ```
+
+3. Build both projects:
+
+   ```powershell
+   dotnet build .\src\Preload\HowToFishVR.Preload.csproj -c Release
+   dotnet build .\src\HowToFishVR\HowToFishVR.csproj -c Release
+   ```
+
+4. After supplying the local packaging dependencies described in [BUILDING.md](BUILDING.md), assemble the install overlay:
+
+   ```powershell
+   .\tools\package.ps1
+   ```
+
+The finished overlay is written to `dist/HowToFishXR/`. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Game assemblies, generated references, logs, dumps, and backups must never be committed.
+
+To build the upload-ready GitHub release ZIP without bundling BepInEx, run:
+
+```powershell
+.\tools\package-github-release.ps1
+```
+
+The archive is written to `release/HowToFishXR-v1.0.0.zip` and includes the install instructions and project notices.
 
 ## Open source and attribution
 

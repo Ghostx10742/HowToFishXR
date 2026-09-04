@@ -19,8 +19,8 @@ public class VRRig : MonoBehaviour
     public Transform LeftHand { get; private set; }
     public Transform RightHand { get; private set; }
 
-    public Transform MainHand => VRConfig.Handedness.Value == DominantHand.Right ? RightHand : LeftHand;
-    public Transform OffHand  => VRConfig.Handedness.Value == DominantHand.Right ? LeftHand : RightHand;
+    public Transform MainHand => RightHand;
+    public Transform OffHand  => LeftHand;
 
     /// <summary>Accumulated artificial yaw from snap/smooth turning and recentering (degrees).</summary>
     public float YawOffset;

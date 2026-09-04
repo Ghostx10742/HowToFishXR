@@ -34,9 +34,8 @@ public class VRUIManager : MonoBehaviour
         "PermaCanvas", "ChatCanvas", "SkipCanvas",
         "MainMenuCanvas", "PauseCanvas", "EndGameCanvas",
         // full-screen effect overlays (blood-when-hurt, underwater tint image) — head-locked, close to
-        // face. The underwater LOOK is: the game's global fog + the URP post-process (GlobalVolume:
-        // distortion/colour, restored by VR Post Processing) + this UnderwaterImage colour overlay (a plain
-        // Default-UI-Material image, so it renders its real authored colour head-locked — NO custom tint).
+        // face. The underwater look uses the game's global fog plus its authored UnderwaterImage colour
+        // overlay (a Default-UI-Material image rendered head-locked with no user-facing processing toggle).
         "FXCanvas", "UnderwaterCanvas", "DeathCanvas",
         // item dots: converted to a world-anchored panel (stays in the world over items, not head-glued)
         "ItemDotsCanvas",

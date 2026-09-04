@@ -127,7 +127,7 @@ internal static class PlayerToolMovementPatches
         // own grip point AND orientation — no per-item eyeballing. gripLocal* is that grip pose expressed
         // in the tool's local frame (constant per item, so it works for any item automatically).
         Transform gripModel = null;
-        try { gripModel = VRConfig.Handedness.Value == DominantHand.Right ? tool.HandModelRight : tool.HandModelLeft; } catch { }
+        try { gripModel = tool.HandModelRight; } catch { }
         bool haveGrip = gripModel != null;
         Vector3 gripLocalPos = haveGrip ? tool.transform.InverseTransformPoint(gripModel.position) : Vector3.zero;
 
@@ -155,7 +155,7 @@ internal static class PlayerToolMovementPatches
         // the REEL HANDLE (the crank), not the rod base, so the rod's off-hand grip point is its crank
         // handle holder when present — that's also what makes physical cranking put your hand on the reel.
         Transform offGripModel = null;
-        try { offGripModel = VRConfig.Handedness.Value == DominantHand.Right ? tool.HandModelLeft : tool.HandModelRight; } catch { }
+        try { offGripModel = tool.HandModelLeft; } catch { }
         if (isRod)
         {
             // The rod's off hand belongs on the REEL / CRANK. Resolve to it EVEN IF the rod has no authored

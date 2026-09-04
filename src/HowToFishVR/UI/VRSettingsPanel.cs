@@ -555,19 +555,14 @@ public class VRSettingsPanel : MonoBehaviour
             () => VRConfig.SnapTurnAngle.Value, v => VRConfig.SnapTurnAngle.Value = Mathf.RoundToInt(v)));
         list.Add(Slider("Smooth Speed", () => VRConfig.SmoothTurnSpeed.Value.ToString("F0") + "°/s", 30f, 360f, false,
             () => VRConfig.SmoothTurnSpeed.Value, v => VRConfig.SmoothTurnSpeed.Value = v));
-        list.Add(Stepper("Dominant Hand", () => VRConfig.Handedness.Value == DominantHand.Right ? "Right" : "Left",
-            () => VRConfig.Handedness.Value = NextEnum(VRConfig.Handedness.Value)));
         list.Add(Toggle("Roomscale Movement", () => VRConfig.RoomscaleMovement.Value, v => VRConfig.RoomscaleMovement.Value = v));
         // Real UI Blur has no panel toggle — the game's real frosted blur is ALWAYS used now (the
         // render-order fix in BlurFix makes it render on the world-space panels). It stays only as a hidden
         // config-file fallback (default on) in case a headset needs the flat-tint stand-in.
-        list.Add(Toggle("VR Post Processing", () => VRConfig.VRPostProcessing.Value, v => VRConfig.VRPostProcessing.Value = v));
         list.Add(Stepper("Sprint Mode", () => VRConfig.SprintMode.Value.ToString(), () => VRConfig.SprintMode.Value = NextEnum(VRConfig.SprintMode.Value)));
         list.Add(Stepper("Crouch Mode", () => VRConfig.CrouchMode.Value.ToString(), () => VRConfig.CrouchMode.Value = NextEnum(VRConfig.CrouchMode.Value)));
         list.Add(Slider("HUD Scale", () => VRConfig.HudScale.Value.ToString("0.00"), 0.5f, 2f, false,
             () => VRConfig.HudScale.Value, v => VRConfig.HudScale.Value = v));
-        list.Add(Slider("HUD Distance", () => VRConfig.HudDistance.Value.ToString("0.0") + "m", 0.3f, 1.5f, false,
-            () => VRConfig.HudDistance.Value, v => VRConfig.HudDistance.Value = v));
         list.Add(Stepper("Death View", () => VRConfig.DeathView.Value == DeathView.FirstPerson ? "First Person" : "Third Person",
             () => VRConfig.DeathView.Value = NextEnum(VRConfig.DeathView.Value)));
 

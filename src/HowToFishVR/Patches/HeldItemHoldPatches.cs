@@ -66,10 +66,9 @@ internal static class HeldItemHoldPatches
             var held = h != null ? h._heldItem : null;
             if (rig == null || rig.MainHand == null || held == null || held.transform == null) return false;
 
-            bool mainLeft = VRConfig.Handedness.Value == DominantHand.Left;
-            Quaternion gripOffset = mainLeft ? PlayerHandsPatches.LeftGripOffset : PlayerHandsPatches.RightGripOffset;
+            Quaternion gripOffset = PlayerHandsPatches.RightGripOffset;
             Quaternion desiredHandRotation = rig.MainHand.rotation * gripOffset;
-            var handPose = mainLeft ? held.HandTransformsLeft : held.HandTransformsRight;
+            var handPose = held.HandTransformsRight;
 
             if (handPose != null && handPose.Exists)
             {

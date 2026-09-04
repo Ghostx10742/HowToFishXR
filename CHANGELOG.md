@@ -15,3 +15,5 @@ All notable changes to HowToFishXR will be documented here.
 - Underwater, death, damage, low-health, and UI-blur presentation adapted for VR.
 - Multiplayer VR body, hand, foot, held-tool, and fishing-line pose synchronization.
 - Optional VR/flat-screen startup while the mod remains installed.
+- Streamlined VR settings with permanent right-hand primary controls and tested HUD/visual defaults.
+- Separate GitHub release packaging with installation documentation; BepInEx remains an external requirement.

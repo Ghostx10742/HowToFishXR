@@ -226,11 +226,10 @@ public class VRHeldItem : MonoBehaviour
             // ONE-HAND. Mirror of the gun latch: pin the MAIN hand's grip to the main controller.
             try
             {
-                bool mainLeft = VRConfig.Handedness.Value == DominantHand.Left;
-                var gripModel = mainLeft ? held.HandModelLeft : held.HandModelRight;
-                bool mainHasPose = mainLeft ? poseL : poseR;
-                var gripPose = mainLeft ? lpL : lpR;
-                var gripPoseRot = mainLeft ? lrL : lrR;
+                var gripModel = held.HandModelRight;
+                bool mainHasPose = poseR;
+                var gripPose = lpR;
+                var gripPoseRot = lrR;
 
                 // 1) Real grip model (tools with hand meshes): pin the model to the controller.
                 if (gripModel != null)
@@ -250,7 +249,7 @@ public class VRHeldItem : MonoBehaviour
                 // controller-driven rotation).
                 if (mainHasPose)
                 {
-                    Quaternion gripOffset = mainLeft ? PlayerHandsPatches.LeftGripOffset : PlayerHandsPatches.RightGripOffset;
+                    Quaternion gripOffset = PlayerHandsPatches.RightGripOffset;
                     Quaternion rot = (main.rotation * gripOffset) * Quaternion.Inverse(gripPoseRot);
                     Vector3 pos = main.position - rot * gripPose;
                     held.transform.SetPositionAndRotation(pos, rot);
@@ -290,8 +289,8 @@ public class VRHeldItem : MonoBehaviour
             var p = Player.LocalPlayer;
             var hands = p != null ? p.Hands : null;
             if (hands == null) return;
-            bool offIsLeft = VRConfig.Handedness.Value == DominantHand.Right;
-            Transform offBone = offIsLeft ? hands.HandBoneLeft : hands.HandBoneRight;
+            const bool offIsLeft = true;
+            Transform offBone = hands.HandBoneLeft;
             if (offBone == null) return;
 
             if (_lighterGripItem != ex)

@@ -9,12 +9,6 @@ public enum TurnMode
     Smooth
 }
 
-public enum DominantHand
-{
-    Right,
-    Left
-}
-
 /// <summary>Full body = restored body + VR IK arms. Hands only = base game, no body. Snap/smooth turning
 /// works in BOTH modes (MAVR-style playspace yaw — the body follows the view).</summary>
 public enum BodyMode
@@ -49,7 +43,6 @@ public static class VRConfig
     public static ConfigEntry<bool> DisableVR;
 
     // ---- General ----
-    public static ConfigEntry<DominantHand> Handedness;
     public static ConfigEntry<float> WorldScale;
 
     // ---- Calibration ----
@@ -78,19 +71,10 @@ public static class VRConfig
     // ---- HUD ----
     public static ConfigEntry<bool> HudFollowsHead;   // yaw-only follow
     public static ConfigEntry<float> HudFollowSmoothing;
-    public static ConfigEntry<float> HudDistance;
     public static ConfigEntry<float> HudScale;
 
     // ---- Interaction ----
     public static ConfigEntry<float> GripThreshold;
-
-    // ---- Rendering ----
-    // Let the game's URP post-processing (GameInfo.GlobalVolume: colour grading, and the UNDERWATER
-    // distortion/colour effect) render in the VR eyes, so VR looks like PC. The mod historically forced it
-    // OFF on every VR camera, which stripped the whole post-process look (that's why underwater was just
-    // fog with no waves/colour). If enabling it makes the eyes render grey/black on your headset, turn it
-    // OFF for the old behaviour.
-    public static ConfigEntry<bool> VRPostProcessing;
 
     // ---- UI ----
     // Keep the game's real UniversalBlurUI frosted-glass shader on converted panels (the actual pixel-blur
@@ -115,8 +99,6 @@ public static class VRConfig
     {
         DisableVR = cfg.Bind("General", "Disable VR", false,
             "Start How to Fish in flatscreen mode while keeping the mod installed. Can also be overridden for one launch with the --disable-vr Steam launch option. Restart required.");
-        Handedness = cfg.Bind("General", "Dominant Hand", DominantHand.Right,
-            "Which hand is the primary/aiming hand.");
         WorldScale = cfg.Bind("General", "World Scale", 1.0f,
             new ConfigDescription("Scales your perceived size in the world. 1.0 = default.",
                 new AcceptableValueRange<float>(0.5f, 2.0f)));
@@ -157,16 +139,11 @@ public static class VRConfig
             "HUD rotates with head yaw but stays level (not pitched up/down), floating in front of you.");
         HudFollowSmoothing = cfg.Bind("HUD", "HUD Smoothing", 0.1f,
             new ConfigDescription("Lower = snappier HUD follow.", new AcceptableValueRange<float>(0.02f, 0.5f)));
-        HudDistance = cfg.Bind("HUD", "HUD Distance", 0.6f,
-            new ConfigDescription("Metres in front of the head.", new AcceptableValueRange<float>(0.3f, 1.5f)));
         HudScale = cfg.Bind("HUD", "HUD Scale", 1.0f,
             new ConfigDescription("Scale multiplier for the HUD.", new AcceptableValueRange<float>(0.5f, 2.0f)));
 
         GripThreshold = cfg.Bind("Interaction", "Grip Threshold", 0.6f,
             new ConfigDescription("Grip pull required to grab.", new AcceptableValueRange<float>(0.1f, 0.95f)));
-
-        VRPostProcessing = cfg.Bind("Rendering", "VR Post Processing", true,
-            "Render the game's post-processing (color grading + the underwater distortion/color effect) in VR so it looks like PC. Turn OFF if your headset shows grey/black eyes with it on.");
 
         RealUIBlur = cfg.Bind("UI", "Real UI Blur", true,
             "Keep the game's real frosted-glass pixel-blur on UI panels (the actual UniversalBlurUI effect) instead of a flat dark tint. Turn OFF if panels render black on your headset.");
