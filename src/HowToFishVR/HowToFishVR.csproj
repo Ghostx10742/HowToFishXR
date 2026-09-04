@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <AssemblyName>HowToFishVR</AssemblyName>
+        <RootNamespace>HowToFishVR</RootNamespace>
+        <Description>HowToFishXR - full 6DoF VR mod for How to Fish</Description>
+        <Version>1.0.0</Version>
+        <Authors>J_axon</Authors>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>disable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <!-- Unity 6000.4 marks compatibility APIs used by the shipped game as obsolete. Keep those
+             exact APIs for runtime parity without turning expected engine warnings into CI noise. -->
+        <NoWarn>1701;1702;8618;0436;0618;0649;0169;0414</NoWarn>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <OutputPath>..\..\bin\$(Configuration)\plugin</OutputPath>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <LibDir>$(MSBuildProjectDirectory)\..\..\lib</LibDir>
+    </PropertyGroup>
+
+    <!-- Reference every staged assembly in lib, except the non-publicized game/network DLLs. -->
+    <ItemGroup>
+        <Reference Include="$(LibDir)\*.dll"
+                   Exclude="$(LibDir)\Assembly-CSharp.dll;$(LibDir)\FishNet.Runtime.dll">
+            <Private>false</Private>
+        </Reference>
+        <!-- Publicized game + networking assemblies for compile-time internal access. -->
+        <Reference Include="Assembly-CSharp">
+            <HintPath>$(LibDir)\publicized\Assembly-CSharp.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="FishNet.Runtime">
+            <HintPath>$(LibDir)\publicized\FishNet.Runtime.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <!-- Embed the InputActions asset + any JSON we ship as resources. -->
+    <ItemGroup>
+        <EmbeddedResource Include="Assets\**\*.json" />
+        <EmbeddedResource Include="Assets\**\*.inputactions" />
+    </ItemGroup>
+
+</Project>

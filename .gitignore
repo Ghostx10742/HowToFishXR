@@ -1,0 +1,67 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ist/
+[Rr]elease/
+artifacts/
+TestResults/
+
+# Local dependency/reference bundles (never redistribute game assemblies)
+lib/
+packages/
+RuntimeDeps/
+*.dll
+*.pdb
+*.mdb
+*.nupkg
+
+# Private reverse-engineering and research workspace
+decompiled/
+decompiled-new/
+ref/
+refs/
+notes/
+HANDOFF_CODEX.md
+
+# Backups, previous installs, and local snapshots
+_installed_before_fix/
+_removed_from_game/
+backups/
+*.bak
+*.backup
+*.zip
+*.7z
+*.rar
+
+# Logs, dumps, diagnostics, and crash artifacts
+*.log
+*.dmp
+*.dump
+*.stackdump
+*.trace
+crash_*/
+diagnostics/
+dumps/
+logs/
+BepInEx/
+
+# User/editor state
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local environment/configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Private maintenance helper; public build tools are tracked separately
+tools/backup.ps1

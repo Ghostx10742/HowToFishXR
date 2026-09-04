@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <AssemblyName>HowToFishVR.Preload</AssemblyName>
+        <RootNamespace>HowToFishVR.Preload</RootNamespace>
+        <Description>HowToFishXR - Preloader (stages OpenXR runtime)</Description>
+        <Version>1.0.0</Version>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>disable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <AssemblySearchPaths>$(AssemblySearchPaths);{HintPathFromItem}</AssemblySearchPaths>
+        <NoWarn>1701;1702;8618;0436</NoWarn>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <DebugType>none</DebugType>
+        <OutputPath>..\..\bin\$(Configuration)\Preload</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <LibDir>$(MSBuildProjectDirectory)\..\..\lib</LibDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="BepInEx">
+            <HintPath>$(LibDir)\BepInEx.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="BepInEx.Preloader">
+            <HintPath>$(LibDir)\BepInEx.Preloader.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="Mono.Cecil">
+            <HintPath>$(LibDir)\Mono.Cecil.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+</Project>

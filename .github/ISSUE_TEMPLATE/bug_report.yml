@@ -1,0 +1,69 @@
+name: Bug report
+description: Report a reproducible HowToFishXR problem
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Do not upload unreviewed logs, dumps, game assemblies, personal paths, or private information.
+  - type: input
+    id: game_version
+    attributes:
+      label: How to Fish version
+      placeholder: Steam build/version
+    validations:
+      required: true
+  - type: input
+    id: mod_version
+    attributes:
+      label: HowToFishXR version
+      placeholder: e.g. 1.0.0
+    validations:
+      required: true
+  - type: input
+    id: headset
+    attributes:
+      label: Headset and controllers
+      placeholder: e.g. Quest 3 with Touch Plus
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: OpenXR runtime/connection
+      placeholder: e.g. Virtual Desktop + SteamVR
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Explain what you saw and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Launch...
+        2. Equip...
+        3. Press...
+    validations:
+      required: true
+  - type: textarea
+    id: mods
+    attributes:
+      label: Other installed mods
+      description: List them or write "None".
+    validations:
+      required: true
+  - type: checkboxes
+    id: review
+    attributes:
+      label: Privacy check
+      options:
+        - label: I reviewed every attachment and removed private information, unrelated logs, dumps, and game files.
+          required: true
