@@ -75,6 +75,16 @@ To create the upload-ready GitHub archive, run:
 
 This writes `release/HowToFishXR-v1.0.0.zip`. The archive contains only `README.md`, `NOTICE`, and the mod's `BepInEx/plugins` and `BepInEx/patchers` folders. It does not bundle BepInEx; users must install `BepInEx-BepInExPack-5.4.2305` first.
 
+## Create a Thunderstore package
+
+The Thunderstore metadata and 256×256 icon are kept separately in `thunderstore/`. Build the upload-ready package with:
+
+```powershell
+.\tools\package-thunderstore.ps1
+```
+
+This writes `release/HowToFishXR-Thunderstore-v1.0.0.zip`. Its root contains the Thunderstore-specific `manifest.json`, `README.md`, `icon.png`, and the mod's routed `BepInEx/plugins` and `BepInEx/patchers` folders. The manifest declares `BepInEx-BepInExPack-5.4.2305` as a dependency.
+
 ## Public CI checks
 
 GitHub Actions validates the repository layout, project metadata, JSON, PowerShell syntax, accidental diagnostic logging, and the absence of private/proprietary files. A full binary compilation remains local because the game reference assemblies cannot be legally committed to the public repository.

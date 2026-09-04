@@ -17,3 +17,4 @@ All notable changes to HowToFishXR will be documented here.
 - Optional VR/flat-screen startup while the mod remains installed.
 - Streamlined VR settings with permanent right-hand primary controls and tested HUD/visual defaults.
 - Separate GitHub release packaging with installation documentation; BepInEx remains an external requirement.
+- Thunderstore-specific manifest, README, icon, dependency declaration, and package builder.

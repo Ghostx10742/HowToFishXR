@@ -61,6 +61,10 @@ Only the right-hand laser controls menus. Gun aiming is physical—there is no s
 
 HowToFishXR uses OpenXR instead of locking itself to one brand. Its included interaction profiles cover Meta Quest 1, 2, 3 and 3S over Link/Air Link/SteamVR/Virtual Desktop, Rift and Rift S, Valve Index, HTC Vive, Windows Mixed Reality, HP Reverb G2, Meta Touch Pro, and Khronos-compatible controllers. PICO PCVR controllers use Unity's common OpenXR controller mappings. This is a Windows PCVR mod, not a standalone Android/Quest APK.
 
+## Multiplayer
+
+HowToFishXR provides full multiplayer pose syncing between VR and flat-screen players who have the mod installed. Modded players can see VR head, hand, body, tool, and fishing poses. Some VR-player movements or interactions may still look inaccurate or bugged to other players; those remaining sync issues are actively being patched.
+
 ## Fishing in VR
 
 ### Casting
@@ -173,7 +177,7 @@ For persistent flat-screen mode, set `Disable VR = true` in `BepInEx/config/com.
 
 ## Installation
 
-The GitHub package will be attached to the [GitHub Releases](https://github.com/Ghostx10742/HowToFishXR/releases) page. It contains `README.md`, `NOTICE`, and the mod's `BepInEx/plugins` and `BepInEx/patchers` folders. **BepInEx is required and is not bundled.** This is a GitHub release package, not a Thunderstore package; Thunderstore packaging is intentionally not included yet.
+The GitHub package will be attached to the [GitHub Releases](https://github.com/Ghostx10742/HowToFishXR/releases) page. It contains `README.md`, `NOTICE`, and the mod's `BepInEx/plugins` and `BepInEx/patchers` folders. **BepInEx is required and is not bundled.** Thunderstore uses a separate package with its own manifest, icon, README, and declared BepInEx dependency.
 
 1. Install [BepInEx 5](https://thunderstore.io/c/how-to-fish/p/BepInEx/BepInExPack/).
 2. Download and unzip the latest HowToFishXR release archive.
@@ -227,6 +231,14 @@ To build the upload-ready GitHub release ZIP without bundling BepInEx, run:
 ```
 
 The archive is written to `release/HowToFishXR-v1.0.0.zip` and contains only `README.md`, `NOTICE`, and the mod's `BepInEx` folder.
+
+To build the Thunderstore upload package, run:
+
+```powershell
+.\tools\package-thunderstore.ps1
+```
+
+The Thunderstore archive is written to `release/HowToFishXR-Thunderstore-v1.0.0.zip`.
 
 ## Open source and attribution
 
