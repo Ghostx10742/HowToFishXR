@@ -38,12 +38,12 @@ Button names use the familiar Meta/PICO layout. Valve Index, Vive, WMR, and othe
 | Right trigger | Fire, use, punch, or hold to reel in; click/drag menus with the right-hand laser |
 | Left trigger | Secondary use; hold and release to cast or reel out |
 | Right grip | Pick up, interact, and enter/exit the boat |
-| Support-hand grip near a gun | Grab the foregrip for two-handed aiming |
-| Support-hand grip near a fishing reel | Latch onto the reel for physical reeling |
-| Support-hand grip near a non-tool item/body | Visually latch the second hand; the main hand keeps control |
+| Left grip near a gun | Grab the foregrip for two-handed aiming |
+| Left grip near a fishing reel | Latch onto the reel for physical reeling |
+| Left grip near a non-tool item/body | Visually latch the second hand; the main hand keeps control |
 | A / right primary | Jump |
 | B / right secondary | Switch bait |
-| Hold support-hand grip + B | Drop; hold B to charge and release to throw |
+| Hold left grip + B | Drop; hold B to charge and release to throw |
 | X / left primary | Reload |
 | Y / left secondary | Pause/unpause |
 | Left grip tap | Inspect the held item |
