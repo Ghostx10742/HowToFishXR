@@ -63,6 +63,11 @@ New-Item -ItemType Directory -Force -Path $stageFull | Out-Null
 
 Copy-Item -LiteralPath $manifestPath, $iconPath, $readmePath -Destination $stageFull
 
+$imagesDir = Join-Path $stageFull "images"
+New-Item -ItemType Directory -Force -Path $imagesDir | Out-Null
+Copy-Item -LiteralPath (Join-Path $base "docs\assets\fishing-showcase.gif") -Destination $imagesDir
+Copy-Item -LiteralPath (Join-Path $base "docs\assets\gun-showcase.gif") -Destination $imagesDir
+
 $pluginDir = Join-Path $stageFull "BepInEx\plugins\HowToFishXR"
 $patcherDir = Join-Path $stageFull "BepInEx\patchers\HowToFishXR"
 $patcherRuntimeDir = Join-Path $patcherDir "RuntimeDeps"

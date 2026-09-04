@@ -83,7 +83,7 @@ The Thunderstore metadata and 256×256 icon are kept separately in `thunderstore
 .\tools\package-thunderstore.ps1
 ```
 
-This writes `release/HowToFishXR-Thunderstore-v1.0.0.zip`. Its root contains the Thunderstore-specific `manifest.json`, `README.md`, `icon.png`, and the mod's routed `BepInEx/plugins` and `BepInEx/patchers` folders. The manifest declares `BepInEx-BepInExPack-5.4.2305` as a dependency.
+This writes `release/HowToFishXR-Thunderstore-v1.0.0.zip`. Its root contains the Thunderstore-specific `manifest.json`, `README.md`, `icon.png`, showcase GIFs in `images/`, and the mod's routed `BepInEx/plugins` and `BepInEx/patchers` folders. The manifest declares `BepInEx-BepInExPack-5.4.2305` as a dependency.
 
 ## Public CI checks
 

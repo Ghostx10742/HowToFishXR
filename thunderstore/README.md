@@ -57,6 +57,14 @@ Hold the **left trigger**, swing the rod from the side like a baseball bat witho
 
 To reel physically, hold the **left grip** near the reel and rotate your hand around the crank. You can switch freely between physical reeling and holding the right trigger.
 
+![Physical casting and reeling](https://raw.githubusercontent.com/Ghostx10742/HowToFishXR/main/docs/assets/fishing-showcase.gif)
+
+## Gun handling
+
+Guns support physical one- and two-handed aiming. Hold the **left grip** near the weapon's foregrip to let both hands influence its direction and stability.
+
+![Two-handed gun handling](https://raw.githubusercontent.com/Ghostx10742/HowToFishXR/main/docs/assets/gun-showcase.gif)
+
 ## VR Settings
 
 The in-game VR Settings menu includes body mode, turning mode, snap angle, smooth-turn speed, roomscale movement, sprint mode, crouch mode, HUD scale, death view, and calibration.
