@@ -5,7 +5,7 @@
         <AssemblyName>HowToFishVR</AssemblyName>
         <RootNamespace>HowToFishVR</RootNamespace>
         <Description>HowToFishXR - full 6DoF VR mod for How to Fish</Description>
-        <Version>1.0.0</Version>
+        <Version>1.2.0</Version>
         <Authors>J_axon</Authors>
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>disable</ImplicitUsings>

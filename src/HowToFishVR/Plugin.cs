@@ -15,7 +15,7 @@ public class Plugin : BaseUnityPlugin
 {
     public const string Guid = "com.jaxon.howtofishvr";
     public const string Name = "HowToFishXR";
-    public const string Version = "1.0.0";
+    public const string Version = "1.2.0";
 
     public static Plugin Instance { get; private set; }
     public new static ManualLogSource Logger { get; private set; }

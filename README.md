@@ -126,9 +126,13 @@ At some angles the finger on the left/support hand can look twisted. That shape 
 ### UI, menus, and visual feedback
 
 - The real HUD, main/pause/settings menus, dialogue, prompts, inventory, item information, and character creator are converted into usable VR panels.
-- Accurate right-hand laser clicking and dragging, configurable HUD scale, and level head-following.
+- Accurate right-hand laser clicking and dragging, an in-world keyboard that opens automatically for text-entry events, configurable HUD scale, and level head-following.
 - World-pinned item dots retain native distance scaling and render through walls.
 - VR-correct death UI, underwater visuals, damage/status overlays, caught-fish notices, hit markers, physical scopes, and frosted-glass UI blur.
+
+### VR keyboard
+
+Selecting a writable text field automatically opens the in-world keyboard in the correct menu space. While it is active, the normal menu laser is hidden and the right controller becomes a keyboard-only pointer. The keyboard follows the moving main-menu boat, types directly into the selected field, and includes a dedicated **Close** button that safely returns control to the menu.
 
 ## VR Settings menu
 
@@ -232,7 +236,7 @@ To build the upload-ready GitHub release ZIP without bundling BepInEx, run:
 .\tools\package-github-release.ps1
 ```
 
-The archive is written to `release/HowToFishXR-v1.0.0.zip` and contains only `README.md`, `NOTICE`, and the mod's `BepInEx` folder.
+The archive is written to `release/HowToFishXR-v1.2.0.zip` and contains only `README.md`, `NOTICE`, and the mod's `BepInEx` folder.
 
 To build the Thunderstore upload package, run:
 
@@ -240,7 +244,7 @@ To build the Thunderstore upload package, run:
 .\tools\package-thunderstore.ps1
 ```
 
-The Thunderstore archive uses the independent version from `thunderstore/manifest.json`; the current output is `release/HowToFishXR-Thunderstore-v1.0.1.zip`.
+The Thunderstore archive uses the version from `thunderstore/manifest.json`; the current output is `release/HowToFishXR-Thunderstore-v1.2.0.zip`.
 
 ## Open source and attribution
 

@@ -170,11 +170,21 @@ public class VRUIManager : MonoBehaviour
             if (canvas != null) canvas.worldCamera = eventCamera;
     }
 
+    internal static void RegisterLaserCanvas(Canvas canvas)
+    {
+        if (canvas == null) return;
+        AddLaserRaycaster(canvas);
+    }
+
     internal static bool IsLaserManaged(GameObject target)
     {
         if (target == null) return false;
         try
         {
+            // While typing, the invisible controller ray is exclusively captured by the keyboard.
+            // Menu controls behind it cannot hover, click, or drag until Enter/Close dismisses it.
+            var keyboard = VRKeyboard.Instance;
+            if (keyboard != null && keyboard.IsOpen) return keyboard.Owns(target);
             foreach (var canvas in target.GetComponentsInParent<Canvas>(true))
                 if (canvas != null && LaserManagedCanvases.Contains(canvas)) return true;
         }

@@ -9,6 +9,7 @@ $metadataRoot = Join-Path $base "thunderstore"
 $manifestPath = Join-Path $metadataRoot "manifest.json"
 $iconPath = Join-Path $metadataRoot "icon.png"
 $readmePath = Join-Path $metadataRoot "README.md"
+$changelogPath = Join-Path $base "CHANGELOG.md"
 
 $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
 $packageVersion = ([string]$manifest.version_number).Trim()
@@ -21,6 +22,7 @@ if (@($manifest.dependencies).Count -ne 1 -or $manifest.dependencies[0] -ne "Bep
     throw "The required BepInEx dependency string is missing or incorrect."
 }
 if (-not (Test-Path -LiteralPath $readmePath)) { throw "Thunderstore README.md is missing." }
+if (-not (Test-Path -LiteralPath $changelogPath)) { throw "CHANGELOG.md is missing." }
 
 Add-Type -AssemblyName System.Drawing
 $icon = [System.Drawing.Image]::FromFile($iconPath)
@@ -59,12 +61,14 @@ if (Test-Path -LiteralPath $stageFull) { Remove-Item -LiteralPath $stageFull -Re
 if (Test-Path -LiteralPath $archiveFull) { Remove-Item -LiteralPath $archiveFull -Force }
 New-Item -ItemType Directory -Force -Path $stageFull | Out-Null
 
-Copy-Item -LiteralPath $manifestPath, $iconPath, $readmePath -Destination $stageFull
+Copy-Item -LiteralPath $manifestPath, $iconPath, $readmePath, $changelogPath -Destination $stageFull
 
 $imagesDir = Join-Path $stageFull "images"
 New-Item -ItemType Directory -Force -Path $imagesDir | Out-Null
 Copy-Item -LiteralPath (Join-Path $base "docs\assets\fishing-showcase.gif") -Destination $imagesDir
 Copy-Item -LiteralPath (Join-Path $base "docs\assets\gun-showcase.gif") -Destination $imagesDir
+Copy-Item -LiteralPath (Join-Path $base "docs\assets\left-hand-finger-note.jpg") -Destination $imagesDir
+Copy-Item -LiteralPath (Join-Path $base "docs\assets\howtofishxr-cover.png") -Destination $imagesDir
 
 $pluginDir = Join-Path $stageFull "BepInEx\plugins\HowToFishXR"
 $patcherDir = Join-Path $stageFull "BepInEx\patchers\HowToFishXR"

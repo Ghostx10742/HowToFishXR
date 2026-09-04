@@ -370,8 +370,12 @@ internal static class PlayerToolMovementPatches
                         ? PlayerHandsPatches.LeftGripOffset
                         : PlayerHandsPatches.RightGripOffset;
                     Quaternion desiredHandRot = controller.rotation * gripOffset;
+                    // The visible hand bone uses the user's permanent controller-local position
+                    // calibration. Anchor the knuckle mesh to that exact same point; using the raw
+                    // controller origin here leaves both fists displaced from their hands.
+                    Vector3 handAnchor = PlayerHandsPatches.CalibratedHandPosition(controller, isLeft);
                     fist.SetPositionAndRotation(
-                        controller.position + desiredHandRot * _fistFromHandPos[side],
+                        handAnchor + desiredHandRot * _fistFromHandPos[side],
                         desiredHandRot * _fistFromHandRot[side]);
                 }
             }

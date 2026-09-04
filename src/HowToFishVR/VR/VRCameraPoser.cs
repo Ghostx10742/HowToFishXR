@@ -361,6 +361,13 @@ public class VRCameraPoser_Behaviour : MonoBehaviour
                 if (localPlayer != null && localPlayer.Hands != null)
                     Patches.PlayerHandsPatches.ApplyTrackedHands(localPlayer.Hands);
                 Body.ArmRig.SolveCurrentPose(localPlayer);
+
+                // Two-fist melee meshes are separate item transforms, not part of the arm rig. Re-seat
+                // them after the final predicted hand pose as well, otherwise the hands advance here
+                // while the knuckles remain at the earlier normal-frame controller sample.
+                if (localPlayer != null && localPlayer.ToolMovement != null &&
+                    localPlayer.ToolMovement.CurrentTool is Melee melee)
+                    Patches.PlayerToolMovementPatches.PinTwoHandMeleeFists(melee);
             }
             catch { }
 

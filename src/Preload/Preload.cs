@@ -1,6 +1,10 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
 using BepInEx;
 using BepInEx.Logging;
 using Mono.Cecil;
@@ -36,12 +40,93 @@ public static class Preload
         try
         {
             SetupRuntimeAssets();
+            EnsureColdSteamVrRuntimeIsReady();
         }
         catch (System.Exception ex)
         {
             Logger.LogError($"Failed to stage VR runtime assets: {ex}");
         }
     }
+
+    /// <summary>
+    /// SteamVR's OpenXR loader can accept the game connection before a cold-started compositor has a
+    /// valid HMD render origin. On the affected path SteamVR reports startup failure -203 and Unity can
+    /// keep the malformed first stereo orientation (including an upside-down view). Start only the
+    /// configured SteamVR runtime early and let its server/compositor settle before Unity creates its
+    /// OpenXR instance. Existing SteamVR sessions and every non-SteamVR runtime pass through unchanged.
+    /// </summary>
+    private static void EnsureColdSteamVrRuntimeIsReady()
+    {
+        try
+        {
+            string runtimeManifest = GetActiveOpenXrRuntime();
+
+            if (string.IsNullOrWhiteSpace(runtimeManifest) ||
+                (runtimeManifest.IndexOf("steamxr", System.StringComparison.OrdinalIgnoreCase) < 0 &&
+                 runtimeManifest.IndexOf("steamvr", System.StringComparison.OrdinalIgnoreCase) < 0))
+                return;
+
+            if (SteamVrProcessesReady()) return;
+
+            string steamVrRoot = Path.GetDirectoryName(runtimeManifest);
+            string monitor = !string.IsNullOrWhiteSpace(steamVrRoot)
+                ? Path.Combine(steamVrRoot, "bin", "win64", "vrmonitor.exe")
+                : null;
+            if (!string.IsNullOrWhiteSpace(monitor) && File.Exists(monitor))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = monitor,
+                    UseShellExecute = true,
+                });
+            }
+            else
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "steam://rungameid/250820",
+                    UseShellExecute = true,
+                });
+            }
+
+            var deadline = System.DateTime.UtcNow.AddSeconds(30);
+            while (System.DateTime.UtcNow < deadline && !SteamVrProcessesReady())
+                Thread.Sleep(250);
+
+            // Process creation happens slightly before SteamVR publishes a stable HMD render origin.
+            // This delay occurs only for a cold SteamVR launch, before the Unity player starts.
+            if (SteamVrProcessesReady()) Thread.Sleep(3000);
+        }
+        catch
+        {
+            // OpenXR's normal initialization remains the fallback if SteamVR cannot be pre-launched.
+        }
+    }
+
+    private static bool SteamVrProcessesReady()
+    {
+        return Process.GetProcessesByName("vrserver").Length > 0 &&
+               Process.GetProcessesByName("vrcompositor").Length > 0;
+    }
+
+    private static string GetActiveOpenXrRuntime()
+    {
+        const uint RrfRegSz = 0x00000002;
+        uint bytes = 0;
+        int result = RegGetValue(HkeyLocalMachine, @"SOFTWARE\Khronos\OpenXR\1", "ActiveRuntime",
+            RrfRegSz, System.IntPtr.Zero, null, ref bytes);
+        if (result != 0 || bytes < 2) return null;
+        var value = new StringBuilder((int)(bytes / 2));
+        result = RegGetValue(HkeyLocalMachine, @"SOFTWARE\Khronos\OpenXR\1", "ActiveRuntime",
+            RrfRegSz, System.IntPtr.Zero, value, ref bytes);
+        return result == 0 ? value.ToString() : null;
+    }
+
+    private static readonly System.IntPtr HkeyLocalMachine = new System.IntPtr(-2147483646);
+
+    [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
+    private static extern int RegGetValue(System.IntPtr hkey, string subKey, string value,
+        uint flags, System.IntPtr type, StringBuilder data, ref uint dataSize);
 
     /// <summary>
     /// Copies the native OpenXR libraries into &lt;Game&gt;_Data/Plugins and writes the subsystem

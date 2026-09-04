@@ -2,6 +2,15 @@
 
 All notable changes to HowToFishXR will be documented here.
 
+## 1.2.0
+
+- Added a VR keyboard that opens for text-entry fields, follows the active menu, uses a dedicated keyboard pointer, and includes a reliable Close button.
+- Improved right-hand menu clicking and dragging while keeping the normal menu laser hidden during keyboard input.
+- Improved SteamVR cold-start handling so launching before SteamVR is ready does not produce an inverted VR view.
+- Applied the finalized hand calibration consistently to guns, fishing rods, and both brass-knuckle meshes.
+- Improved render-timed hand, arm IK, and knuckle posing for smoother, correctly aligned motion.
+- Restored normal BepInEx logging behavior while keeping unnecessary mod diagnostics and dump systems removed.
+
 ## 1.0.0
 
 - Initial public release.

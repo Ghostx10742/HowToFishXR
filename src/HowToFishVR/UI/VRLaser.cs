@@ -83,6 +83,7 @@ public class VRLaser : MonoBehaviour
 
     internal static bool LaserActive()
     {
+        if (VRKeyboard.Instance != null && VRKeyboard.Instance.IsOpen) return true;
         try { if (MainMenuManager.IsInMenu) return true; } catch { }
         try { if (PauseManager.IsPaused) return true; } catch { }
         try { if (VRSettingsPanel.IsOpen) return true; } catch { }
@@ -128,6 +129,16 @@ public class VRLaser : MonoBehaviour
         Vector3 origin = r.Go.transform.position;
         var pointer = VRPointerInputModule.Instance;
         pointer?.RefreshRaycastForRender();
+        // While typing this is a keyboard-only pointer: the input module already rejects every canvas
+        // except the keyboard, and the beam is visible only when it actually intersects that board.
+        // It therefore cannot appear on or click the menu behind the keyboard.
+        bool keyboardOpen = VRKeyboard.Instance != null && VRKeyboard.Instance.IsOpen;
+        if (keyboardOpen && (pointer == null || !pointer.HasHit))
+        {
+            r.Line.enabled = false;
+            return;
+        }
+        r.Line.enabled = true;
         Vector3 end = origin + r.Go.transform.forward * Length;
         if (pointer != null && pointer.HasHit) end = pointer.HitPoint;
         r.Line.SetPosition(0, origin);

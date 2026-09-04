@@ -47,6 +47,7 @@ public static class Entrypoint
             VRCalibration.Create();
             VRDamageOverlay.Create();
             UI.VRUIManager.Create();
+            UI.VRKeyboard.Create();
             UI.VRLaser.Create();
             // No custom death overlay: the REAL game DeathUI canvas is shown as a head-locked overlay
             // (VRUIManager converts + head-locks it to the view camera), so the death screen renders like

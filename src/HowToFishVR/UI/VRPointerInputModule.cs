@@ -240,7 +240,13 @@ internal sealed class VRPointerInputModule : BaseInputModule
         _eventCamera.transform.SetParent(null, true);
         _cameraFrozen = true;
         UpdateFrozenReferenceFrame();
-        eventSystem.SetSelectedGameObject(pressed, _pointer);
+        bool keyboardKey = VRKeyboard.Instance != null && VRKeyboard.Instance.IsOpen && VRKeyboard.Instance.Owns(go);
+        if (!keyboardKey) eventSystem.SetSelectedGameObject(pressed, _pointer);
+
+        // Schedule 1 VR's input-field hook: selecting a TMP_InputField opens the in-headset keyboard.
+        // This runs on pointer-down, after TMP has received the hit used to place its caret.
+        if (!(VRKeyboard.Instance?.TryOpenFor(go) ?? false) && pressed != null)
+            VRKeyboard.Instance?.TryOpenFor(pressed);
     }
 
     private void DragPointer()
