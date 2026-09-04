@@ -1,6 +1,6 @@
 {
   "name": "HowToFishXR",
-  "version_number": "1.0.0",
+  "version_number": "1.0.1",
   "website_url": "https://github.com/Ghostx10742/HowToFishXR",
   "description": "Full 6DoF PCVR for How to Fish with tracked hands, physical fishing and reeling, two-handed guns, roomscale movement, full-body IK, VR UI, and multiplayer pose syncing.",
   "dependencies": [

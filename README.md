@@ -238,7 +238,7 @@ To build the Thunderstore upload package, run:
 .\tools\package-thunderstore.ps1
 ```
 
-The Thunderstore archive is written to `release/HowToFishXR-Thunderstore-v1.0.0.zip`.
+The Thunderstore archive uses the independent version from `thunderstore/manifest.json`; the current output is `release/HowToFishXR-Thunderstore-v1.0.1.zip`.
 
 ## Open source and attribution
 

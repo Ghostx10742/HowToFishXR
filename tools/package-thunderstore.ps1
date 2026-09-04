@@ -10,13 +10,11 @@ $manifestPath = Join-Path $metadataRoot "manifest.json"
 $iconPath = Join-Path $metadataRoot "icon.png"
 $readmePath = Join-Path $metadataRoot "README.md"
 
-[xml]$projectXml = Get-Content -Raw -LiteralPath $project
-$version = ([string]$projectXml.Project.PropertyGroup.Version).Trim()
 $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
+$packageVersion = ([string]$manifest.version_number).Trim()
 
 if ($manifest.name -notmatch '^[A-Za-z0-9_]{1,128}$') { throw "Invalid Thunderstore package name: $($manifest.name)" }
-if ($manifest.version_number -notmatch '^\d+\.\d+\.\d+$') { throw "Invalid Thunderstore version: $($manifest.version_number)" }
-if ($manifest.version_number -ne $version) { throw "Manifest version $($manifest.version_number) does not match project version $version." }
+if ($packageVersion -notmatch '^\d+\.\d+\.\d+$') { throw "Invalid Thunderstore version: $packageVersion" }
 if ([string]$manifest.description.Length -gt 250) { throw "Thunderstore description exceeds 250 characters." }
 if ($manifest.website_url -ne "https://github.com/Ghostx10742/HowToFishXR") { throw "Unexpected website_url in manifest." }
 if (@($manifest.dependencies).Count -ne 1 -or $manifest.dependencies[0] -ne "BepInEx-BepInExPack-5.4.2305") {
@@ -39,7 +37,7 @@ $bin = Join-Path $base "bin\$Configuration"
 $lib = Join-Path $base "lib"
 $runtimeDeps = Join-Path $base "RuntimeDeps"
 $releaseRoot = Join-Path $base "release"
-$packageName = "HowToFishXR-Thunderstore-v$version"
+$packageName = "HowToFishXR-Thunderstore-v$packageVersion"
 $stage = Join-Path $releaseRoot $packageName
 $archive = Join-Path $releaseRoot "$packageName.zip"
 
