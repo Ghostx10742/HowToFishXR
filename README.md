@@ -7,7 +7,9 @@
 </p>
 
 <p align="center">
+  <a href="https://thunderstore.io/c/how-to-fish/p/J_axon/HowToFishXR/"><img alt="Thunderstore Version" src="https://img.shields.io/thunderstore/v/J_axon/HowToFishXR?style=for-the-badge&logo=thunderstore&logoColor=white"></a>
   <a href="https://github.com/Ghostx10742/HowToFishXR/releases/latest"><img alt="GitHub Version" src="https://img.shields.io/github/v/release/Ghostx10742/HowToFishXR?style=for-the-badge&logo=github"></a>
+  <a href="https://thunderstore.io/c/how-to-fish/p/J_axon/HowToFishXR/"><img alt="Thunderstore Downloads" src="https://img.shields.io/thunderstore/dt/J_axon/HowToFishXR?style=for-the-badge&logo=thunderstore&logoColor=white"></a>
   <a href="https://github.com/Ghostx10742/HowToFishXR/releases/latest"><img alt="GitHub Downloads" src="https://img.shields.io/github/downloads/Ghostx10742/HowToFishXR/total?style=for-the-badge&logo=github"></a>
   <br>
   <a href="https://github.com/Ghostx10742/HowToFishXR/actions/workflows/build-release.yml"><img alt="Release Check" src="https://img.shields.io/github/actions/workflow/status/Ghostx10742/HowToFishXR/build-release.yml?branch=main&style=for-the-badge&label=RELEASE"></a>
