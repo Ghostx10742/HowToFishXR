@@ -51,7 +51,7 @@ Button names use the familiar Meta/PICO layout. Valve Index, Vive, WMR, and othe
 | F2 | Recenter forward direction |
 | F3 | Start standing-height and body calibration |
 
-Only the right-hand laser controls menus. Gun aiming is physical—there is no separate ADS button—and push-to-talk is intentionally not bound by the mod.
+Only the right-hand laser controls menus. Gun aiming is physical—there is no separate ADS button—and push-to-talk is intentionally not bound by the mod. Throwing uses the direction and motion of your right hand for aiming, while empty-hand and brass-knuckle punching use head-based aiming.
 
 ## Requirements and headset support
 
