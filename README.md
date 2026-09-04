@@ -247,7 +247,7 @@ HowToFishXR is open source under the **Apache License 2.0**. You may inspect, mo
 ## Credits
 
 - Created and directed by **J_axon**.
-- Testing by **mrbub**, **VernalWitch**, **Feesh**, **Wake**, **Aeolian**, and **supersaiyanslyr**.
+- Testers: **Aeolian**, **Feesh**, **mrbub**, **supersaiyanslyr**, **VernalWitch**, and **Wake**.
 
 ## AI disclosure
 
