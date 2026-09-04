@@ -73,7 +73,7 @@ To create the upload-ready GitHub archive, run:
 .\tools\package-github-release.ps1
 ```
 
-This writes `release/HowToFishXR-v1.0.0.zip`. The archive includes only the mod, its XR runtime components, installation/readme files and media, changelog, license, and NOTICE. It does not bundle BepInEx; users must install `BepInEx-BepInExPack-5.4.2305` first.
+This writes `release/HowToFishXR-v1.0.0.zip`. The archive contains only `README.md`, `NOTICE`, and the mod's `BepInEx/plugins` and `BepInEx/patchers` folders. It does not bundle BepInEx; users must install `BepInEx-BepInExPack-5.4.2305` first.
 
 ## Public CI checks
 

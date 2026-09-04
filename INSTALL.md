@@ -4,9 +4,9 @@ HowToFishXR requires **How to Fish** on Windows, a PCVR headset with an active O
 
 1. Install BepInEx 5.4.2305 into the folder containing `How to Fish.exe` and run the game once.
 2. Start your OpenXR runtime, such as SteamVR, Meta/Oculus, PICO Connect, or Virtual Desktop.
-3. Extract the HowToFishXR GitHub release ZIP into the folder containing `How to Fish.exe` and allow the `BepInEx` folders to merge.
+3. Unzip the HowToFishXR release, then copy its `BepInEx` folder into the folder containing `How to Fish.exe` and allow the folders to merge.
 4. Launch the game normally through Steam.
 
-The archive contains the HowToFishXR plugin, preloader, required XR runtime components, language file, README and its media, changelog, Apache 2.0 license, and NOTICE. It does not contain BepInEx, game files, logs, dumps, or backups.
+The archive contains only `README.md`, `NOTICE`, and the mod's `BepInEx/plugins` and `BepInEx/patchers` folders. It does not contain BepInEx itself, game files, logs, dumps, or backups.
 
 For a one-time flat-screen launch without uninstalling the mod, use the Steam launch option `--disable-vr`.

@@ -173,11 +173,11 @@ For persistent flat-screen mode, set `Disable VR = true` in `BepInEx/config/com.
 
 ## Installation
 
-The GitHub package will be attached to the [GitHub Releases](https://github.com/Ghostx10742/HowToFishXR/releases) page. It contains HowToFishXR, its required XR components, [INSTALL.md](INSTALL.md), this README, the changelog, license, and NOTICE. **BepInEx is required and is not bundled.** This is a GitHub release package, not a Thunderstore package; Thunderstore packaging is intentionally not included yet.
+The GitHub package will be attached to the [GitHub Releases](https://github.com/Ghostx10742/HowToFishXR/releases) page. It contains `README.md`, `NOTICE`, and the mod's `BepInEx/plugins` and `BepInEx/patchers` folders. **BepInEx is required and is not bundled.** This is a GitHub release package, not a Thunderstore package; Thunderstore packaging is intentionally not included yet.
 
 1. Install [BepInEx 5](https://thunderstore.io/c/how-to-fish/p/BepInEx/BepInExPack/).
-2. Download the latest HowToFishXR release archive.
-3. Extract the archive into the folder containing `How to Fish.exe` and allow folders to merge.
+2. Download and unzip the latest HowToFishXR release archive.
+3. Copy the archive's `BepInEx` folder into the folder containing `How to Fish.exe`, then allow the folders to merge.
 4. Start an OpenXR runtime, then launch the game through Steam.
 
 Developers who want to compile the source should follow the build-from-source section below and [BUILDING.md](BUILDING.md). Game assemblies, logs, dumps, backups, and decompiled game files are deliberately not included in this repository.
@@ -226,7 +226,7 @@ To build the upload-ready GitHub release ZIP without bundling BepInEx, run:
 .\tools\package-github-release.ps1
 ```
 
-The archive is written to `release/HowToFishXR-v1.0.0.zip` and includes the install instructions and project notices.
+The archive is written to `release/HowToFishXR-v1.0.0.zip` and contains only `README.md`, `NOTICE`, and the mod's `BepInEx` folder.
 
 ## Open source and attribution
 

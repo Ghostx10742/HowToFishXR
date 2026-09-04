@@ -55,10 +55,9 @@ Copy-Item -LiteralPath (Join-Path $bin "Preload\HowToFishVR.Preload.dll") -Desti
 Copy-Item -LiteralPath (Join-Path $runtimeDeps "UnityOpenXR.dll") -Destination $patcherRuntimeDir
 Copy-Item -LiteralPath (Join-Path $runtimeDeps "openxr_loader.dll") -Destination $patcherRuntimeDir
 
-foreach ($name in @("README.md", "INSTALL.md", "CHANGELOG.md", "LICENSE", "NOTICE")) {
+foreach ($name in @("README.md", "NOTICE")) {
     Copy-Item -LiteralPath (Join-Path $base $name) -Destination $stageFull
 }
-Copy-Item -LiteralPath (Join-Path $base "docs") -Destination $stageFull -Recurse
 
 Compress-Archive -Path (Join-Path $stageFull "*") -DestinationPath $archiveFull -CompressionLevel Optimal
 
