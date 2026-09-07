@@ -71,6 +71,7 @@ public class VRRig : MonoBehaviour
     private Vector3 _deathAnchor;
     private bool _setGameView;
     private bool _gameHeightSet;
+    private bool _wasInMainMenu;
 
     public static void Create()
     {
@@ -124,6 +125,20 @@ public class VRRig : MonoBehaviour
 
         var player = Player.LocalPlayer;
         if (player != null) VRBindings.TryInject();
+        bool inMainMenu = false;
+        try { inMainMenu = MainMenuManager.IsInMenu; } catch { }
+        if (inMainMenu && !_wasInMainMenu)
+        {
+            // Returning from gameplay can leave both a stale LocalPlayer and accumulated snap/boat yaw.
+            // Re-enter the same neutral tracking basis used by a fresh launch; VRCameraPoser will place
+            // the root absolutely on the sailing boat target later in this frame.
+            YawOffset = 0f;
+            _roomOffset = Vector3.zero;
+            _planarInit = false;
+            _needsReanchor = false;
+        }
+        _wasInMainMenu = inMainMenu;
+        if (inMainMenu) player = null;
 
         // Use the GAME's real eye height (default was too tall). PlayerCamera.CamHeight is the game's eye
         // height above the player root.
@@ -246,6 +261,12 @@ public class VRRig : MonoBehaviour
         LeftHand.localPosition = a.LeftPos; LeftHand.localRotation = a.LeftRot;
         RightHand.localPosition = a.RightPos; RightHand.localRotation = a.RightRot;
 
+        // Component Update order is not guaranteed. Force the restored body's parent basis to the new
+        // snap yaw now, before PlayerBody.LateUpdate writes world-space torso/head rotations. Otherwise
+        // a snap can be applied once to the child under the old parent and again when the body driver
+        // updates on the next frame, progressively twisting/misplacing the body on repeated snaps.
+        if (SnapTurned) Body.HowToFishBody.SyncCurrentPose();
+
         ApplySprintCrouch();
 
         // Calibration is deliberately F3-only. VRCalibration owns the edge-triggered F3 state and
@@ -261,6 +282,7 @@ public class VRRig : MonoBehaviour
     private void FixedUpdate()
     {
         if (!Plugin.VREnabled) return;
+        try { if (MainMenuManager.IsInMenu) return; } catch { }
         var a = VRActions.Instance;
         if (a == null) return;
 
@@ -366,6 +388,7 @@ public class VRRig : MonoBehaviour
     /// </summary>
     private void ApplySprintCrouch()
     {
+        try { if (MainMenuManager.IsInMenu) return; } catch { }
         var player = Player.LocalPlayer;
         if (player == null || player.Movement == null) return;
 
@@ -494,7 +517,7 @@ public class VRRig : MonoBehaviour
                 catch { }
             }
         }
-        else // Smooth (MAVR: normalized magnitude past a 0.15 deadzone)
+        else if (VRConfig.Turning.Value == TurnMode.Smooth) // normalized magnitude past a 0.15 deadzone
         {
             if (Mathf.Abs(value) >= 0.15f)
             {

@@ -16,7 +16,7 @@
   <a href="https://github.com/Ghostx10742/HowToFishXR/actions/workflows/build-debug.yml"><img alt="Debug Check" src="https://img.shields.io/github/actions/workflow/status/Ghostx10742/HowToFishXR/build-debug.yml?branch=main&style=for-the-badge&label=DEBUG"></a>
 </p>
 
-HowToFishXR is a free, open-source [BepInEx](https://thunderstore.io/c/how-to-fish/p/BepInEx/BepInExPack/) mod that brings full 6DoF PCVR to **How to Fish**. It adds tracked hands, motion-controlled tools, physical fishing and reeling, one- and two-handed gun handling, roomscale movement, full-body IK, VR-native UI, multiplayer pose syncing, and the visual feedback needed to play the complete game inside a headset.
+HowToFishXR is a free, open-source [BepInEx](https://thunderstore.io/c/how-to-fish/p/BepInEx/BepInExPack/) mod that brings full 6DoF PCVR to **How to Fish**. It adds tracked hands, hand-aimed melee combat, motion-controlled tools, physical fishing and reeling, one- and two-handed gun handling, roomscale movement, full-body IK, VR-native UI, multiplayer pose syncing, and the visual feedback needed to play the complete game inside a headset.
 
 > **Credit required.** You are free to study, modify, and redistribute this project under the Apache License 2.0. If you reuse its code, you must preserve the license and NOTICE attribution, clearly credit **J_axon** as the creator, and link to [HowToFishXR](https://github.com/Ghostx10742/HowToFishXR). See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
@@ -46,14 +46,14 @@ Button names use the familiar Meta/PICO layout. Valve Index, Vive, WMR, and othe
 | A / right primary | Jump |
 | B / right secondary | Switch bait |
 | Hold left grip + B | Drop; hold B to charge and release to throw |
-| X / left primary | Reload |
+| X / left primary | Reload a gun |
 | Y / left secondary | Pause/unpause |
-| Left grip tap | Inspect the held item |
+| Left grip (press once) | Inspect the held item—the game's **F / Inspect** action |
 | F1 or both stick clicks | Open/close VR Settings while the main or pause menu is open |
 | F2 | Recenter forward direction |
 | F3 | Start standing-height and body calibration |
 
-Only the right-hand laser controls menus. Gun aiming is physical—there is no separate ADS button—and push-to-talk is intentionally not bound by the mod. Throwing uses the direction and motion of your right hand for aiming, while empty-hand and brass-knuckle punching use head-based aiming.
+Only the right-hand laser controls menus. Gun aiming is physical—there is no separate ADS button—and push-to-talk is intentionally not bound by the mod. Throwing uses the direction and motion of your right hand for aiming. Empty-hand punches, brass knuckles, and the knife also aim along the right hand, with extra VR reach and small-target assistance for low creatures. The segmented melee guide is enabled by default and can be switched off in **VR Settings**. Pressing the trigger briefly shows it: red during/recent input, then light blue before hiding after five seconds.
 
 ## Requirements and headset support
 
@@ -83,6 +83,18 @@ Move your support hand to the reel and hold its grip button. Your visible hand l
 
 The rod, bait, bend, line, audio, caught-item behavior, and game-authored reel speeds remain part of the original fishing system—the mod changes how you physically control them.
 
+## Fists, brass knuckles, and knife
+
+Empty-hand punches, brass-knuckle attacks, and knife strikes aim from the calibrated **right hand**, just like throwing. Press the right trigger to attack along the controller's corrected forward direction. VR melee uses a 3-meter minimum targeting range so you can point down and hit crabs, pond creatures, and other small targets from a natural standing position. A focused aim assist follows the creature under your hand line while walls and other real obstructions still block the attack.
+
+The segmented melee guide is enabled by default and can be toggled with **Melee Aim Guide** in VR Settings. Pressing the trigger shows the actual attack path in red; it changes to light blue after the input and hides five seconds after the last press. It appears only during gameplay with empty fists, brass knuckles, or the knife—not while using menus or other tools.
+
+The knife stays locked to the authored right-hand grip while its flat-screen sway and attack-lunge animations are suppressed, so the hand remains controller-driven throughout the strike.
+
+<p align="center">
+  <img src="docs/assets/melee-aim-guide.gif" width="800" alt="Right-hand melee aiming guide for fists, brass knuckles, and the knife in HowToFishXR">
+</p>
+
 ## Gun handling
 
 Guns sit on the calibrated main-hand grip and fire from their real muzzle. Bring your support hand near the weapon's authored foregrip and hold grip to enter two-handed handling. Both controller positions influence the weapon's direction, the main hand remains the rear pivot, and the support hand steadies and steers the barrel. Release support grip to return to one-handed handling.
@@ -103,32 +115,12 @@ At some angles the finger on the left/support hand can look twisted. That shape 
 
 ## Features
 
-### VR rendering and tracking
-
-- Full stereoscopic 6DoF OpenXR tracking with render-timed head and hand poses, roomscale movement, physical crouching, recentering, and height calibration.
-- Snap and smooth turning, a clean one-eye desktop mirror, and a stable moving-boat main menu.
-- Permanent tested hand placement, right-hand primary controls, and the game's native eye height.
-- VR-ready character customization plus optional flat-screen launching without uninstalling the mod.
-
-### Body and multiplayer
-
-- Full-body IK or Hands Only mode, with render-timed arms and body alignment through turning, boats, death, respawning, and scene changes.
-- The body remains visible as a passenger and hides only while driving.
-- Multiplayer syncing for VR body, hands, tools, and fishing poses between modded players; vanilla lobbies remain compatible.
-
-### Hands, items, and combat
-
-- Physical fishing casts and reeling, calibrated rod handling, and one- or two-handed guns with support-hand steering, physical sights, recoil, and muzzle-correct shots.
-- Physics-aware holding and throwing for fish, food, creatures, and other items; fish stay one-handed while normal items can visually latch the support hand.
-- Ragdoll body carrying and reviving, correctly placed TNT/lighter and brass knuckles, plus head-aimed empty-hand and knuckle punching.
-- Game-authored grip poses are preserved while flat-screen sprint tuck, punch, sniper-overlay, and forced zoom animations are removed where inappropriate for VR.
-
-### UI, menus, and visual feedback
-
-- The real HUD, main/pause/settings menus, dialogue, prompts, inventory, item information, and character creator are converted into usable VR panels.
-- Accurate right-hand laser clicking and dragging, an in-world keyboard that opens automatically for text-entry events, configurable HUD scale, and level head-following.
-- World-pinned item dots retain native distance scaling and render through walls.
-- VR-correct death UI, underwater visuals, damage/status overlays, caught-fish notices, hit markers, physical scopes, and frosted-glass UI blur.
+- Full stereoscopic OpenXR tracking, roomscale movement, physical crouching, calibration, turning options, and a clean desktop mirror.
+- Full-body IK or Hands Only mode, with multiplayer VR pose syncing and body handling for boats, death, respawning, and scene changes.
+- Physical casting/reeling, one- and two-handed guns, hand-aimed fists/knuckles/knife combat, throwing, physics-aware items, dead bodies, and TNT.
+- VR-converted HUD, menus, dialogue, character customization, world markers, death/underwater/damage effects, scopes, and UI blur.
+- Right-hand menu clicking/dragging plus an automatic in-world keyboard for names and other typing events.
+- VR or flat-screen startup without uninstalling the mod.
 
 ### VR keyboard
 
@@ -141,9 +133,10 @@ Open the native-styled **VR Settings** page from the main menu or pause menu. Yo
 | Setting | What it changes |
 |---|---|
 | Body | Full Body IK or Hands Only |
-| Turning | Snap or Smooth turning |
+| Turning | None, Snap, or Smooth turning |
 | Snap Angle | Degrees rotated per snap turn |
 | Smooth Speed | Smooth-turn degrees per second |
+| Melee Aim Guide | Toggle the temporary fists/knuckles/knife aiming guide |
 | Roomscale Movement | Physical walking and crouching move the game body |
 | Sprint Mode | Hold or Toggle |
 | Crouch Mode | Hold or Toggle |
@@ -236,7 +229,7 @@ To build the upload-ready GitHub release ZIP without bundling BepInEx, run:
 .\tools\package-github-release.ps1
 ```
 
-The archive is written to `release/HowToFishXR-v1.2.0.zip` and contains only `README.md`, `NOTICE`, and the mod's `BepInEx` folder.
+The archive is written to `release/HowToFishXR-v1.3.0.zip` and contains only `README.md`, `NOTICE`, and the mod's `BepInEx` folder.
 
 To build the Thunderstore upload package, run:
 
@@ -244,7 +237,7 @@ To build the Thunderstore upload package, run:
 .\tools\package-thunderstore.ps1
 ```
 
-The Thunderstore archive uses the version from `thunderstore/manifest.json`; the current output is `release/HowToFishXR-Thunderstore-v1.2.0.zip`.
+The Thunderstore archive uses the version from `thunderstore/manifest.json`; the current output is `release/HowToFishXR-Thunderstore-v1.3.0.zip`.
 
 ## Open source and attribution
 

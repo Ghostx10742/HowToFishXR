@@ -106,6 +106,8 @@ public class VRCameraPoser_Behaviour : MonoBehaviour
     private static SelfDrivingBoat _menuBoat;
     private static Transform _menuCameraTarget;
     private static Vector3 _menuTargetLocalOffset;
+    private static SelfDrivingBoat _menuOffsetBoat;
+    private static bool _menuTargetLocalOffsetValid;
     private static bool _menuAnchorInit;
     private static bool _customizationPoseActive;
     private static SelfDrivingBoat _customizationBoat;
@@ -149,8 +151,16 @@ public class VRCameraPoser_Behaviour : MonoBehaviour
             // Preserve the small authored offset only for the default sailing camera. When switching
             // to character customization the game intentionally chooses a different camera target;
             // carrying the old offset across that switch is what kept the avatar out of view.
-            if (!LocalSkin.IsInSkinCustomization)
+            // Capture the small authored camera offset once for this persistent menu boat. Gameplay
+            // overwrites the render camera, so recapturing from that stale camera when returning to the
+            // menu creates a bad offset and leaves the view behind. Reuse the known-good fresh-menu value.
+            if (!LocalSkin.IsInSkinCustomization &&
+                (!_menuTargetLocalOffsetValid || _menuOffsetBoat != boat))
+            {
                 _menuTargetLocalOffset = Quaternion.Inverse(target.rotation) * (primary.transform.position - targetPosition);
+                _menuOffsetBoat = boat;
+                _menuTargetLocalOffsetValid = true;
+            }
             _menuAnchorInit = true;
         }
         _menuCameraTarget = target;
@@ -227,7 +237,15 @@ public class VRCameraPoser_Behaviour : MonoBehaviour
             Vector3 headCalib = rig.HeadCalib;
 
             Camera gameCam = null;
-            try { var p = Player.LocalPlayer; if (p != null && p.Camera != null) gameCam = p.Camera.Cam; } catch { }
+            // Player.LocalPlayer survives briefly (and sometimes indefinitely) after quitting a game.
+            // MainMenuManager is the authoritative state: never let that stale gameplay camera win over
+            // the sailing menu camera when returning to the menu.
+            bool inMainMenu = false;
+            try { inMainMenu = MainMenuManager.IsInMenu; } catch { }
+            if (!inMainMenu)
+            {
+                try { var p = Player.LocalPlayer; if (p != null && p.Camera != null) gameCam = p.Camera.Cam; } catch { }
+            }
 
             if (rig.Head != null) { rig.Head.localPosition = headPos; rig.Head.localRotation = headRot; }
             if (rig.LeftHand != null) { rig.LeftHand.localPosition = a.LeftPos; rig.LeftHand.localRotation = a.LeftRot; }
@@ -358,16 +376,26 @@ public class VRCameraPoser_Behaviour : MonoBehaviour
             try
             {
                 var localPlayer = Player.LocalPlayer;
+                // The knife root must consume the same final predicted controller pose as the hand
+                // bones. Otherwise the hand advances here while the knife remains at the normal-frame
+                // sample, which looks like the knife sliding back and forth instead of being latched.
+                if (localPlayer != null && localPlayer.ToolMovement != null)
+                    Patches.PlayerToolMovementPatches.SyncKnifeToLatestHand(localPlayer.ToolMovement);
                 if (localPlayer != null && localPlayer.Hands != null)
                     Patches.PlayerHandsPatches.ApplyTrackedHands(localPlayer.Hands);
                 Body.ArmRig.SolveCurrentPose(localPlayer);
 
-                // Two-fist melee meshes are separate item transforms, not part of the arm rig. Re-seat
-                // them after the final predicted hand pose as well, otherwise the hands advance here
-                // while the knuckles remain at the earlier normal-frame controller sample.
+                // Melee visuals are separate item transforms, not part of the arm rig. Re-seat them
+                // after the final predicted hand pose as well, otherwise the tracked hands advance here
+                // while the knuckles/knife remain at the earlier normal-frame controller sample.
                 if (localPlayer != null && localPlayer.ToolMovement != null &&
                     localPlayer.ToolMovement.CurrentTool is Melee melee)
-                    Patches.PlayerToolMovementPatches.PinTwoHandMeleeFists(melee);
+                {
+                    if (melee._useBothHands)
+                        Patches.PlayerToolMovementPatches.PinTwoHandMeleeFists(melee);
+                    else if (Patches.PunchPatches.IsKnife(melee))
+                        Patches.PlayerToolMovementPatches.PinSingleHandKnife(melee);
+                }
             }
             catch { }
 

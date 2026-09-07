@@ -97,7 +97,20 @@ internal sealed class LocalBodyDriver : MonoBehaviour
                 viewPitch = camEuler.x;
             }
             Quaternion yawOnly = Quaternion.Euler(0f, viewYaw, 0f);
-            _other._transform.localPosition = _player.Transform.InverseTransformDirection(yawOnly * VRConfig.BodyOffset.Value);
+            // Keep the turn pivot at the headset's floor projection, but restore the avatar's authored
+            // body-space offset behind that pivot. Removing this spacing put the chest in front of the
+            // headset, so the player viewed the body from behind. The offset is rotated by the already-
+            // solved view yaw; this changes only where the body sits, not the snap/smooth-turn system.
+            Vector3 bodyLocal = Vector3.zero;
+            if (rig != null && rig.Head != null)
+            {
+                Vector3 headLocal = _player.Transform.InverseTransformPoint(rig.Head.position);
+                bodyLocal.x = headLocal.x;
+                bodyLocal.z = headLocal.z;
+                bodyLocal += _player.Transform.InverseTransformDirection(yawOnly * VRConfig.BodyOffset.Value);
+                bodyLocal.y = 0f;
+            }
+            _other._transform.localPosition = bodyLocal;
             _other._transform.localRotation = Quaternion.Inverse(_player.Transform.rotation) * yawOnly;
             if (_other._camProxy != null)
                 _other._camProxy.localRotation = Quaternion.Euler(viewPitch, 0f, 0f);

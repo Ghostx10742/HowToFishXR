@@ -5,6 +5,7 @@ namespace HowToFishVR;
 
 public enum TurnMode
 {
+    None,
     Snap,
     Smooth
 }
@@ -75,6 +76,7 @@ public static class VRConfig
 
     // ---- Interaction ----
     public static ConfigEntry<float> GripThreshold;
+    public static ConfigEntry<bool> MeleeAimGuide;
 
     // ---- UI ----
     // Keep the game's real UniversalBlurUI frosted-glass shader on converted panels (the actual pixel-blur
@@ -115,7 +117,7 @@ public static class VRConfig
             "Your calibrated standing head height (m), saved by F3. Informational; the live head reference is re-captured each launch.");
 
         Turning = cfg.Bind("Turning", "Turn Mode", TurnMode.Snap,
-            "Snap = instant rotation; Smooth = continuous rotation.");
+            "None = physical turning only; Snap = instant rotation; Smooth = continuous rotation.");
         SnapTurnAngle = cfg.Bind("Turning", "Snap Angle", 45,
             new ConfigDescription("Degrees per snap turn.", new AcceptableValueRange<int>(15, 90)));
         SmoothTurnSpeed = cfg.Bind("Turning", "Smooth Speed", 120f,
@@ -144,6 +146,8 @@ public static class VRConfig
 
         GripThreshold = cfg.Bind("Interaction", "Grip Threshold", 0.6f,
             new ConfigDescription("Grip pull required to grab.", new AcceptableValueRange<float>(0.1f, 0.95f)));
+        MeleeAimGuide = cfg.Bind("Interaction", "Melee Aim Guide", true,
+            "Show the temporary segmented right-hand aim guide for empty fists, brass knuckles, and the knife.");
 
         RealUIBlur = cfg.Bind("UI", "Real UI Blur", true,
             "Keep the game's real frosted-glass pixel-blur on UI panels (the actual UniversalBlurUI effect) instead of a flat dark tint. Turn OFF if panels render black on your headset.");

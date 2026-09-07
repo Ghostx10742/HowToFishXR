@@ -46,6 +46,7 @@ public class VRDamageOverlay : MonoBehaviour
 
         var rt = (RectTransform)canvasGo.transform;
         rt.sizeDelta = new Vector2(1920f, 1080f);
+        // Fixed physical coverage: health/damage/death effects must never inherit the user's HUD scale.
         rt.localScale = Vector3.one * 0.0016f; // ~3.1m wide / 1.73m tall — massively overfills at 0.35m so no quad edge shows
 
         // The flatscreen death darkening is PlayerEffects' BLACK death vignette: target intensity 0.4,
@@ -69,6 +70,7 @@ public class VRDamageOverlay : MonoBehaviour
             };
         }
         catch { }
+        deathGo.SetActive(false);
 
         var imgGo = new GameObject("Vignette");
         imgGo.transform.SetParent(canvasGo.transform, false);
@@ -143,9 +145,28 @@ public class VRDamageOverlay : MonoBehaviour
         try
         {
             var player = Player.LocalPlayer;
-            dead = player != null && player.Dying != null && player.Dying.IsDead;
+            var localDeathUI = PlayerUI._instance != null ? PlayerUI._instance._deathUI : null;
+            // This is the mod-owned copy of the native death darkening, so it must be driven only by
+            // this client's death screen. Requiring both states prevents a remote/stale network death
+            // flag from leaving the translucent backdrop visible beside or over an alive player's view.
+            dead = player != null && player.Dying != null && player.Dying.IsDead &&
+                   localDeathUI != null && localDeathUI._isOn;
         }
         catch { }
+
+        // Never fade the death-only backdrop while alive. The old gradual fade could remain visibly
+        // translucent after respawn or a multiplayer state transition. Damage/low-health feedback is
+        // the separate _img vignette and remains unchanged.
+        if (!dead)
+        {
+            _deathBackdropAlpha = 0f;
+            _deathBackdrop.color = Color.clear;
+            if (_deathBackdrop.gameObject.activeSelf) _deathBackdrop.gameObject.SetActive(false);
+            UpdateCanvasActive();
+            return;
+        }
+
+        if (!_deathBackdrop.gameObject.activeSelf) _deathBackdrop.gameObject.SetActive(true);
         float target = dead ? NativeDeathBackdropAlpha : 0f;
         _deathBackdropAlpha = Mathf.Lerp(_deathBackdropAlpha, target,
             Mathf.Clamp01(Time.deltaTime * NativeDeathFadeSpeed));

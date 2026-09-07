@@ -69,6 +69,7 @@ Copy-Item -LiteralPath (Join-Path $base "docs\assets\fishing-showcase.gif") -Des
 Copy-Item -LiteralPath (Join-Path $base "docs\assets\gun-showcase.gif") -Destination $imagesDir
 Copy-Item -LiteralPath (Join-Path $base "docs\assets\left-hand-finger-note.jpg") -Destination $imagesDir
 Copy-Item -LiteralPath (Join-Path $base "docs\assets\howtofishxr-cover.png") -Destination $imagesDir
+Copy-Item -LiteralPath (Join-Path $base "docs\assets\melee-aim-guide.gif") -Destination $imagesDir
 
 $pluginDir = Join-Path $stageFull "BepInEx\plugins\HowToFishXR"
 $patcherDir = Join-Path $stageFull "BepInEx\patchers\HowToFishXR"

@@ -143,15 +143,36 @@ public class VRUIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// True if this canvas is the death screen — detected by NAME ("Death") OR by hosting a DeathUI
-    /// component (the canvas name isn't guaranteed and can change between game versions). The death
-    /// screen must be treated as a full-view head-locked OVERLAY, never a head-following panel.
+    /// Resolve ownership through DeathUI._deathCanvas rather than hierarchy. The DeathUI component and
+    /// the referenced visual canvas live in different parts of the player prefab in some game states.
     /// </summary>
+    private static DeathUI GetDeathCanvasOwner(Canvas c)
+    {
+        if (c == null) return null;
+        try
+        {
+            foreach (var deathUI in UnityEngine.Object.FindObjectsOfType<DeathUI>(true))
+            {
+                if (deathUI == null || deathUI._deathCanvas == null) continue;
+                var ownerCanvas = deathUI._deathCanvas.GetComponentInParent<Canvas>(true);
+                if (ownerCanvas != null && ownerCanvas.rootCanvas == c) return deathUI;
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    /// <summary>True only for the actual visual canvas referenced by the local DeathUI.</summary>
     private static bool IsDeathCanvas(Canvas c)
     {
         if (c == null) return false;
-        if (c.name.IndexOf("Death", System.StringComparison.OrdinalIgnoreCase) >= 0) return true;
-        try { return c.GetComponentInChildren<DeathUI>(true) != null; } catch { return false; }
+        try
+        {
+            var localDeathUI = PlayerUI._instance != null ? PlayerUI._instance._deathUI : null;
+            return localDeathUI != null && GetDeathCanvasOwner(c) == localDeathUI;
+        }
+        catch { }
+        return false;
     }
 
     /// <summary>True if any converted menu panel is currently shown (used to toggle the laser).</summary>
@@ -270,6 +291,17 @@ public class VRUIManager : MonoBehaviour
                 if (!c.gameObject.scene.IsValid()) continue;
                 if (c.name.StartsWith("HowToFishVR", StringComparison.Ordinal)) continue;
 
+                // Every networked player prefab contributes a DeathCanvas, and after the local death
+                // holder is moved into our dedicated panel its old DeathCanvas has no owner at all. Only
+                // the canvas currently referenced by the local DeathUI may be converted. Remote, stale,
+                // and pre-initialization death canvases must remain untouched or they become a translucent
+                // HUD panel at the side of the headset view.
+                var deathCanvasOwner = GetDeathCanvasOwner(c);
+                var localDeathUI = PlayerUI._instance != null ? PlayerUI._instance._deathUI : null;
+                bool localDeathCanvas = localDeathUI != null && deathCanvasOwner == localDeathUI;
+                bool namedDeathCanvas = c.name.IndexOf("Death", StringComparison.OrdinalIgnoreCase) >= 0;
+                if (!localDeathCanvas && (namedDeathCanvas || deathCanvasOwner != null)) continue;
+
                 // DELIBERATE CLASSIFICATION — every canvas falls into exactly one bucket:
                 //  - Whitelist + Overlays  -> head-locked full-view effect overlays (blood, underwater,
                 //    death screen)
@@ -351,7 +383,7 @@ public class VRUIManager : MonoBehaviour
                     // DeathCamera and centered on your view), NOT a small ConvertMenu/ConvertHUD panel — that
                     // routing is exactly why the respawn text sat off-centre and the backdrop stayed pinned
                     // where you died (only ConvertOverlay does the death reparent + full-view head-lock).
-                    if (IsDeathCanvas(c)) ConvertOverlay(c, renderOrder, cam, forceDeath: true);
+                    if (localDeathCanvas) ConvertOverlay(c, renderOrder, cam, forceDeath: true);
                     else if (Overlays.Contains(c.name)) ConvertOverlay(c, renderOrder, cam);
                     else if (HeadFollowMenus.Contains(c.name)) ConvertHUD(c, renderOrder, cam); // main menu: in-front panel that rotates with you
                     else if (HasButtons(c)) ConvertMenu(c, renderOrder, cam);
@@ -467,7 +499,9 @@ public class VRUIManager : MonoBehaviour
                 // with stretch anchors (sizeDelta ~= 0), which made the overlay scale wrong (a tiny or giant
                 // plane = "black screen" / nothing). rect.width is the actual on-screen size.
                 float w = rt.rect.width > 1f ? rt.rect.width : Mathf.Max(1f, rt.sizeDelta.x);
-                float s = (2.6f * VRConfig.HudScale.Value) / w;
+                // Full-screen visual effects are view coverage, not HUD. Their physical size must stay
+                // constant so HUD Scale cannot expose an edge or enlarge blood/underwater/death effects.
+                float s = 2.6f / w;
                 rt.localScale = new Vector3(s, s, s);
             }
             // The death screen starts under the game's stationary DeathCamera. Parent it directly to the
@@ -500,6 +534,7 @@ public class VRUIManager : MonoBehaviour
         try
         {
             if (deathUI == null || deathUI._deathCanvas == null) return;
+            if (PlayerUI._instance == null || PlayerUI._instance._deathUI != deathUI) return;
             var cam = Cam();
             var root = EnsureDedicatedDeathPanel(deathUI, cam);
             if (root == null) return;
@@ -573,7 +608,7 @@ public class VRUIManager : MonoBehaviour
         var rt = panel != null ? panel.GetComponent<RectTransform>() : null;
         if (rt == null) return;
         float w = rt.rect.width > 1f ? rt.rect.width : Mathf.Max(1f, rt.sizeDelta.x);
-        rt.localScale = Vector3.one * ((DeathWidth * VRConfig.HudScale.Value) / w);
+        rt.localScale = Vector3.one * (DeathWidth / w);
     }
 
     /// <summary>
@@ -992,7 +1027,7 @@ public class VRUIManager : MonoBehaviour
             {
                 var o = _overlays[k];
                 if (o == null || o.renderMode != RenderMode.WorldSpace) continue;
-                bool isDeathOverlay = _deathOverlays.Contains(o) || IsDeathCanvas(o);
+                bool isDeathOverlay = _deathOverlays.Contains(o);
                 bool isUnderwater = o.name.IndexOf("Underwater", System.StringComparison.OrdinalIgnoreCase) >= 0;
                 // The underwater tint is driven by the SAME camera check the game uses when alive — on
                 // only while the camera is in the water, off the moment it isn't (so it can never stick
@@ -1038,7 +1073,8 @@ public class VRUIManager : MonoBehaviour
                 if (ort != null)
                 {
                     float ow = ort.rect.width > 1f ? ort.rect.width : Mathf.Max(1f, ort.sizeDelta.x);
-                    float os = ((isDeathOverlay ? DeathWidth : 2.6f) * VRConfig.HudScale.Value) / ow;
+                    // HUD Scale applies to readable panels only. Full-view effects retain fixed coverage.
+                    float os = (isDeathOverlay ? DeathWidth : 2.6f) / ow;
                     if (Mathf.Abs(ort.localScale.x - os) > 1e-5f) ort.localScale = new Vector3(os, os, os);
                 }
             }

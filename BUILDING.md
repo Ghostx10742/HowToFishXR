@@ -73,7 +73,7 @@ To create the upload-ready GitHub archive, run:
 .\tools\package-github-release.ps1
 ```
 
-This writes `release/HowToFishXR-v1.2.0.zip`. The archive contains only `README.md`, `NOTICE`, and the mod's `BepInEx/plugins` and `BepInEx/patchers` folders. It does not bundle BepInEx; users must install `BepInEx-BepInExPack-5.4.2305` first.
+This writes `release/HowToFishXR-v1.3.0.zip`. The archive contains only `README.md`, `NOTICE`, and the mod's `BepInEx/plugins` and `BepInEx/patchers` folders. It does not bundle BepInEx; users must install `BepInEx-BepInExPack-5.4.2305` first.
 
 ## Create a Thunderstore package
 
@@ -83,7 +83,7 @@ The Thunderstore metadata and 256×256 icon are kept separately in `thunderstore
 .\tools\package-thunderstore.ps1
 ```
 
-The output filename uses the version in `thunderstore/manifest.json` (currently `release/HowToFishXR-Thunderstore-v1.2.0.zip`). Its root contains the Thunderstore-specific `manifest.json`, `README.md`, `CHANGELOG.md`, `icon.png`, showcase media in `images/`, and the mod's routed `BepInEx/plugins` and `BepInEx/patchers` folders. The manifest declares `BepInEx-BepInExPack-5.4.2305` as a dependency.
+The output filename uses the version in `thunderstore/manifest.json` (currently `release/HowToFishXR-Thunderstore-v1.3.0.zip`). Its root contains the Thunderstore-specific `manifest.json`, `README.md`, `CHANGELOG.md`, `icon.png`, showcase media in `images/`, and the mod's routed `BepInEx/plugins` and `BepInEx/patchers` folders. The manifest declares `BepInEx-BepInExPack-5.4.2305` as a dependency.
 
 ## Public CI checks
 

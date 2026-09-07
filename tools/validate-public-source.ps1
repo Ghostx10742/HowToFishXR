@@ -25,6 +25,7 @@ try {
         "docs/assets/howtofishxr-cover.png",
         "docs/assets/fishing-showcase.gif",
         "docs/assets/gun-showcase.gif",
+        "docs/assets/melee-aim-guide.gif",
         "docs/assets/left-hand-finger-note.jpg"
     )
     foreach ($path in $required) {

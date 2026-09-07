@@ -37,7 +37,7 @@ public static class Entrypoint
             Body.RemoteBodyDriver.Create();
             ApplyNetPatches();
         }
-        catch (System.Exception ex) { Plugin.Logger.LogError($"VR networking failed to initialize: {ex}"); }
+        catch { }
 
         if (Plugin.VREnabled)
         {
@@ -49,6 +49,7 @@ public static class Entrypoint
             UI.VRUIManager.Create();
             UI.VRKeyboard.Create();
             UI.VRLaser.Create();
+            UI.VRPunchAim.Create();
             // No custom death overlay: the REAL game DeathUI canvas is shown as a head-locked overlay
             // (VRUIManager converts + head-locks it to the view camera), so the death screen renders like
             // flatscreen — real respawn prompt, give-up mask, darkening — not a custom mirror.
@@ -70,8 +71,8 @@ public static class Entrypoint
     }
 
     /// <summary>
-    /// Patch each Harmony class independently so one bad target (e.g. after a game update) logs a
-    /// warning instead of disabling every VR patch. Classes marked <see cref="Patches.NetOnlyPatchAttribute"/>
+    /// Patch each Harmony class independently so one bad target (e.g. after a game update) does not
+    /// disable every VR patch. Classes marked <see cref="Patches.NetOnlyPatchAttribute"/>
     /// are applied separately (see <see cref="ApplyNetPatches"/>) so they run on flatscreen clients too.
     /// </summary>
     private static void ApplyPatchesResiliently()
@@ -85,17 +86,14 @@ public static class Entrypoint
             {
                 Plugin.HarmonyInstance.CreateClassProcessor(type).Patch();
             }
-            catch (Exception ex)
-            {
-                Plugin.Logger.LogError($"Patch class '{type.Name}' failed: {ex.Message}");
-            }
+            catch { }
         }
     }
 
     /// <summary>
     /// Apply the networking patches on EVERY modded client regardless of <c>Plugin.VREnabled</c>, so a
     /// flatscreen player with the mod still sees VR players' full bodies. Each class is applied
-    /// independently so one bad target only logs a warning.
+    /// independently so one bad target does not disable the others.
     /// </summary>
     private static void ApplyNetPatches()
     {
@@ -107,10 +105,7 @@ public static class Entrypoint
             {
                 Plugin.HarmonyInstance.CreateClassProcessor(type).Patch();
             }
-            catch (Exception ex)
-            {
-                Plugin.Logger.LogError($"Net patch class '{type.Name}' failed: {ex.Message}");
-            }
+            catch { }
         }
     }
 }

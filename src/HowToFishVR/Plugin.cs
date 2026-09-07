@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using BepInEx;
-using BepInEx.Logging;
 using HarmonyLib;
 using UnityEngine;
 
@@ -15,10 +14,9 @@ public class Plugin : BaseUnityPlugin
 {
     public const string Guid = "com.jaxon.howtofishvr";
     public const string Name = "HowToFishXR";
-    public const string Version = "1.2.0";
+    public const string Version = "1.3.0";
 
     public static Plugin Instance { get; private set; }
-    public new static ManualLogSource Logger { get; private set; }
     public static Harmony HarmonyInstance { get; private set; }
 
     /// <summary>True once the OpenXR loader has been initialized and a headset is active.</summary>
@@ -52,7 +50,6 @@ public class Plugin : BaseUnityPlugin
     private void Awake()
     {
         Instance = this;
-        Logger = base.Logger;
 
         // VR must keep its full Unity player loop alive when the desktop window loses focus. Set this
         // before OpenXR, the menu boat, physics, and input are initialized (VRRig also reasserts it).
@@ -70,10 +67,7 @@ public class Plugin : BaseUnityPlugin
         {
             Entrypoint.Initialize();
         }
-        catch (Exception ex)
-        {
-            Logger.LogError($"Fatal error during VR initialization: {ex}");
-        }
+        catch { }
     }
 
     // RepoXR-style startup gate: VR is the default, while config gives a persistent flatscreen mode and

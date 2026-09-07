@@ -561,6 +561,7 @@ public class VRSettingsPanel : MonoBehaviour
         // config-file fallback (default on) in case a headset needs the flat-tint stand-in.
         list.Add(Stepper("Sprint Mode", () => VRConfig.SprintMode.Value.ToString(), () => VRConfig.SprintMode.Value = NextEnum(VRConfig.SprintMode.Value)));
         list.Add(Stepper("Crouch Mode", () => VRConfig.CrouchMode.Value.ToString(), () => VRConfig.CrouchMode.Value = NextEnum(VRConfig.CrouchMode.Value)));
+        list.Add(Toggle("Melee Aim Guide", () => VRConfig.MeleeAimGuide.Value, v => VRConfig.MeleeAimGuide.Value = v));
         list.Add(Slider("HUD Scale", () => VRConfig.HudScale.Value.ToString("0.00"), 0.5f, 2f, false,
             () => VRConfig.HudScale.Value, v => VRConfig.HudScale.Value = v));
         list.Add(Stepper("Death View", () => VRConfig.DeathView.Value == DeathView.FirstPerson ? "First Person" : "Third Person",

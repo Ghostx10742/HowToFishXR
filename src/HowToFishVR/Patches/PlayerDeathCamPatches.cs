@@ -57,6 +57,9 @@ internal static class DeathUIPatches
     private static void PreservePanelScale(DeathUI __instance, bool to)
     {
         if (!Plugin.VREnabled) return;
+        // Networked player prefabs can each contain a DeathUI. Only the PlayerUI singleton initialized
+        // for this client is allowed to create or drive the head-locked VR death panel.
+        if (PlayerUI._instance == null || PlayerUI._instance._deathUI != __instance) return;
         // The game just started a 2 -> 1 LeanTween scale flourish on the death canvas. In VR that
         // canvas is a small world-space panel, so the flourish leaves it as a 1920-metre wall (the
         // "black respawn screen"). The per-frame scale re-assert in VRUIManager.Reposition overrides

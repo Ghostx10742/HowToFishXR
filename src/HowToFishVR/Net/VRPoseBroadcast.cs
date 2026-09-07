@@ -158,9 +158,6 @@ public static class VRBroadcastSerializers
                 Line3 = r.ReadVector3(),
             });
         }
-        catch (System.Exception ex)
-        {
-            Plugin.Logger.LogError($"VR pose serializer registration failed: {ex}");
-        }
+        catch { }
     }
 }

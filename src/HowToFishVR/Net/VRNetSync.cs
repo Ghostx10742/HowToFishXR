@@ -204,7 +204,7 @@ public class VRNetSync : MonoBehaviour
                 _serverRegistered = true;
             }
         }
-        catch (Exception ex) { Plugin.Logger.LogError($"VR network broadcast registration failed: {ex}"); }
+        catch { }
     }
 
     private void SendHello()

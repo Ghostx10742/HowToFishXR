@@ -1,8 +1,8 @@
 {
   "name": "HowToFishXR",
-  "version_number": "1.2.0",
+  "version_number": "1.3.0",
   "website_url": "https://github.com/Ghostx10742/HowToFishXR",
-  "description": "Full 6DoF PCVR for How to Fish with tracked hands, physical fishing and reeling, two-handed guns, roomscale movement, full-body IK, VR UI, and multiplayer pose syncing.",
+  "description": "Full 6DoF PCVR for How to Fish with tracked hands, hand-aimed melee, physical fishing and reeling, two-handed guns, full-body IK, VR UI, and multiplayer pose syncing.",
   "dependencies": [
     "BepInEx-BepInExPack-5.4.2305"
   ]

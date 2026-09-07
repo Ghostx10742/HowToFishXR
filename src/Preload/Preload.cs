@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using BepInEx;
-using BepInEx.Logging;
 using Mono.Cecil;
 
 namespace HowToFishVR.Preload;
@@ -32,9 +31,6 @@ public static class Preload
   ""inputs"": [ { ""id"": ""OpenXR Input"" } ]
 }";
 
-    private static readonly ManualLogSource Logger =
-        BepInEx.Logging.Logger.CreateLogSource("HowToFishVR.Preload");
-
     public static void Initialize()
     {
         try
@@ -42,10 +38,7 @@ public static class Preload
             SetupRuntimeAssets();
             EnsureColdSteamVrRuntimeIsReady();
         }
-        catch (System.Exception ex)
-        {
-            Logger.LogError($"Failed to stage VR runtime assets: {ex}");
-        }
+        catch { }
     }
 
     /// <summary>
@@ -176,10 +169,7 @@ public static class Preload
     private static void CopyIfNewer(string src, string dst)
     {
         if (!File.Exists(src))
-        {
-            Logger.LogError($"Required VR runtime dependency is missing: {src}");
             return;
-        }
 
         if (File.Exists(dst) &&
             new FileInfo(dst).Length == new FileInfo(src).Length)

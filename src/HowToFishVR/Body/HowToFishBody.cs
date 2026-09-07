@@ -29,6 +29,15 @@ internal static class HowToFishBody
     /// <summary>The player the body is currently built for (for the per-frame lifecycle validity gate).</summary>
     public static Player BoundPlayer => _player;
 
+    /// <summary>Apply the restored body's current parent/position/yaw immediately. Snap turns call this
+    /// after the VR rig receives its new yaw so PlayerBody.LateUpdate cannot run once under a stale
+    /// parent basis and leave a cumulative local-space rotation behind.</summary>
+    internal static void SyncCurrentPose()
+    {
+        if (!Active || _driver == null) return;
+        try { _driver.Sync(); } catch { }
+    }
+
     /// <summary>
     /// FRIK-style validity check (isRootNodeValid + isGameReadyForSkeletonInitialization): are ALL the
     /// references the restored body depends on still LIVE? Used by <see cref="BodyLifecycle"/> every frame

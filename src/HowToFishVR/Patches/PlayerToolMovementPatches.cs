@@ -38,6 +38,13 @@ internal static class PlayerToolMovementPatches
     private static readonly bool[] _fistFromHandValid = new bool[2];
     private static Melee _fistPoseTool;
 
+    // Single-hand knife equivalent of the proven knuckle placement: capture the prefab's authored
+    // knife-mesh relationship to its hand pose once, then drive that mesh directly from the controller.
+    private static Vector3 _knifeFromHandPos;
+    private static Quaternion _knifeFromHandRot = Quaternion.identity;
+    private static bool _knifeFromHandValid;
+    private static Melee _knifePoseTool;
+
     // Stable two-hand gun aim state. The actual muzzle axis is aligned to the vector between controllers;
     // the last valid rotation is retained inside the close-hands deadzone so the gun cannot flip or jitter.
     private static Item _twoHandTool;
@@ -122,6 +129,12 @@ internal static class PlayerToolMovementPatches
 
         var weapon = tool.Weapon;
         bool isRod = tool is FishingRod;
+        var knifeMelee = tool as Melee;
+        bool isKnife = knifeMelee != null && PunchPatches.IsKnife(knifeMelee);
+        if (isKnife)
+        {
+            ResetKnifeSway(tool);
+        }
 
         // Use EACH ITEM'S OWN grip transform (HandModelRight/Left) so every item is held natively by its
         // own grip point AND orientation — no per-item eyeballing. gripLocal* is that grip pose expressed
@@ -129,16 +142,17 @@ internal static class PlayerToolMovementPatches
         Transform gripModel = null;
         try { gripModel = tool.HandModelRight; } catch { }
         bool haveGrip = gripModel != null;
+        bool useGripForRoot = haveGrip && !isKnife;
         Vector3 gripLocalPos = haveGrip ? tool.transform.InverseTransformPoint(gripModel.position) : Vector3.zero;
 
         // One-hand rotation follows the hand. Guns AND fishing rods use the exact same permanent
         // controller-local position calibration as the visible hand bone. Keep the legacy palm nudge
         // only for other tools whose already-approved placement must remain unchanged.
-        Quaternion oneHandRot = main.rotation * ToolRotOffset;
-        Vector3 palmNudge = main.rotation * new Vector3(0f, -0.035f, -0.03f);
         bool mainIsLeft = main == rig.LeftHand;
         bool offIsLeft = off == rig.LeftHand;
-        bool useCalibratedHandAnchors = weapon != null || isRod;
+        Quaternion oneHandRot = main.rotation * ToolRotOffset;
+        Vector3 palmNudge = main.rotation * new Vector3(0f, -0.035f, -0.03f);
+        bool useCalibratedHandAnchors = weapon != null || isRod || isKnife;
         Vector3 mainAnchor = useCalibratedHandAnchors
             ? PlayerHandsPatches.CalibratedHandPosition(main, mainIsLeft)
             : main.position + palmNudge;
@@ -147,7 +161,7 @@ internal static class PlayerToolMovementPatches
         Vector3 offAnchor = useCalibratedHandAnchors
             ? PlayerHandsPatches.CalibratedHandPosition(off, offIsLeft)
             : off.position;
-        Vector3 oneHandBasePos = haveGrip ? mainAnchor - oneHandRot * gripLocalPos : mainAnchor;
+        Vector3 oneHandBasePos = useGripForRoot ? mainAnchor - oneHandRot * gripLocalPos : mainAnchor;
 
         // Off-hand grip latches at the ACTUAL second-hand grip point (its HandModel for the off hand),
         // so you grab where the hand really goes — and when latched the off hand snaps there (see
@@ -219,10 +233,8 @@ internal static class PlayerToolMovementPatches
         // influences the rod's pose (100% main-hand driven); it also enables the physical reel
         // (FishingPhysicalReelPatches).
         OffHandGripTarget = (_gunTwoHand || _rodTwoHand) ? offGripModel : null;
-        // Both brass-knuckle meshes are independently placed from the raw XR controllers below. Do not
-        // also pull the dominant player-hand bone onto the item's animated grip: that changed the hand
-        // rotation, and retaining only its position made the right knuckle appear displaced from the
-        // now controller-driven hand.
+        // Melee meshes are placed directly from their captured authored hand relationships below. Never
+        // feed an animated melee node back into the player hand; that feedback is what displaced/froze it.
         MainHandGripTarget = haveGrip && !(tool is Melee) ? gripModel : null;
 
         // TWO-HAND: rear/main hand is the positional anchor. The vector from main to support hand defines
@@ -286,13 +298,13 @@ internal static class PlayerToolMovementPatches
         else { _twoHandAimValid = false; _twoHandGrabOffsetValid = false; }
 
         // Keep the main authored grip fixed to the rear hand after the two-hand rotation is solved.
-        Vector3 basePos = haveGrip ? mainAnchor - rot * gripLocalPos : mainAnchor;
+        Vector3 basePos = useGripForRoot ? mainAnchor - rot * gripLocalPos : mainAnchor;
 
         // Item stays on the grip at your hand, with the game's RECOIL kick applied on top (it worked well).
         Vector3 finalPos = basePos;
         Quaternion finalRot = rot;
         var recoilRig = __instance._toolRecoilRig;
-        if (recoilRig != null)
+        if (recoilRig != null && !isKnife)
         {
             var rt = recoilRig.transform;
             // Re-capture the rest pose when the tool (or the owner's rig) changes — a stale rest pose
@@ -319,7 +331,84 @@ internal static class PlayerToolMovementPatches
         }
         tool.transform.SetPositionAndRotation(finalPos, finalRot);
 
-        if (tool is Melee melee) PinTwoHandMeleeFists(melee);
+        if (tool is Melee melee)
+        {
+            if (melee._useBothHands) PinTwoHandMeleeFists(melee);
+            else if (PunchPatches.IsKnife(melee)) PinSingleHandKnife(melee);
+        }
+    }
+
+    /// <summary>Re-seat only the knife from the newest OpenXR render-time controller pose. The visible
+    /// hands receive that newer pose immediately before rendering as well; advancing the knife in the
+    /// same pass removes the one-sample back-and-forth motion without changing other tool handling.</summary>
+    internal static void SyncKnifeToLatestHand(PlayerToolMovement movement)
+    {
+        try
+        {
+            if (movement != null && movement.CurrentTool is Melee melee && PunchPatches.IsKnife(melee))
+                FollowHand(movement);
+        }
+        catch { }
+    }
+
+    /// <summary>Remove the flatscreen sway/bob layer from the local VR knife. Its root is already
+    /// controller-driven, so retaining this child offset makes the blade float around the physical hand.</summary>
+    internal static void ResetKnifeSway(Tool tool)
+    {
+        try
+        {
+            if (tool == null || tool.SwayTransform == null) return;
+            tool.SwayTransform.localPosition = Vector3.zero;
+            tool.SwayTransform.localRotation = Quaternion.identity;
+        }
+        catch { }
+    }
+
+    /// <summary>Single-hand form of the proven knuckle placement. Capture the prefab's authored
+    /// knife-to-hand relationship once, then place the knife mesh directly from the calibrated controller.
+    /// This bypasses the knife's animated HandModelRight node as an anchor, while retaining its exact
+    /// authored position and rotation relative to the hand.</summary>
+    internal static void PinSingleHandKnife(Melee melee)
+    {
+        try
+        {
+            if (!PunchPatches.IsKnife(melee) || melee._hands == null || melee._hands.Length < 1 ||
+                melee._hands[0] == null || melee.Holder == null || melee.Holder.Owner == null ||
+                !melee.Holder.Owner.IsLocalClient) return;
+            if (melee._origPos == null || melee._origPos.Length < 1 ||
+                melee._origRot == null || melee._origRot.Length < 1) return;
+
+            var rig = VRRig.Instance;
+            var controller = rig != null ? rig.RightHand : null;
+            var knifeNode = melee._hands[0];
+            var ht = melee.HandTransformsRight;
+            if (controller == null || knifeNode.parent == null || ht == null || !ht.Exists || ht.Parent == null)
+                return;
+
+            if (_knifePoseTool != melee)
+            {
+                _knifePoseTool = melee;
+                _knifeFromHandValid = false;
+            }
+
+            if (!_knifeFromHandValid)
+            {
+                Vector3 authoredHandPos = ht.Parent.TransformPoint(ht.HandPos);
+                Quaternion authoredHandRot = ht.Parent.rotation * ht.HandRot;
+                Vector3 authoredKnifePos = knifeNode.parent.TransformPoint(melee._origPos[0]);
+                Quaternion authoredKnifeRot = knifeNode.parent.rotation * melee._origRot[0];
+                _knifeFromHandPos = Quaternion.Inverse(authoredHandRot) * (authoredKnifePos - authoredHandPos);
+                _knifeFromHandRot = Quaternion.Inverse(authoredHandRot) * authoredKnifeRot;
+                _knifeFromHandValid = true;
+            }
+
+            Quaternion desiredHandRot = controller.rotation * PlayerHandsPatches.RightGripOffset;
+            Vector3 handAnchor = PlayerHandsPatches.CalibratedHandPosition(controller, isLeft: false);
+            knifeNode.SetPositionAndRotation(
+                handAnchor + desiredHandRot * _knifeFromHandPos,
+                desiredHandRot * _knifeFromHandRot);
+        }
+        catch { }
     }
 
     /// <summary>Place BOTH meshes of a two-fist melee item from their raw XR controllers using each
@@ -414,11 +503,15 @@ internal static class VRMeleeVisualPatches
     [HarmonyPostfix]
     private static void RestoreKnucklePose(Melee __instance)
     {
-        if (_captured != __instance || __instance._hands == null || __instance._hands.Length < 2) return;
-        for (int i = 0; i < 2; i++)
-            if (__instance._hands[i] != null)
-                __instance._hands[i].SetPositionAndRotation(_positions[i], _rotations[i]);
-        _captured = null;
+        if (_captured == __instance && __instance._hands != null && __instance._hands.Length >= 2)
+        {
+            for (int i = 0; i < 2; i++)
+                if (__instance._hands[i] != null)
+                    __instance._hands[i].SetPositionAndRotation(_positions[i], _rotations[i]);
+            _captured = null;
+        }
+        if (Plugin.HeadsetActive && PunchPatches.IsKnife(__instance))
+            PlayerToolMovementPatches.PinSingleHandKnife(__instance);
     }
 
     private static bool IsLocalTwoFist(Melee melee)
@@ -429,6 +522,27 @@ internal static class VRMeleeVisualPatches
                    melee.Holder != null && melee.Holder.Owner != null && melee.Holder.Owner.IsLocalClient;
         }
         catch { return false; }
+    }
+}
+
+/// <summary>PlayerToolMovement writes sway to the held model after GlueToCamera. Clear that final child
+/// pose for the local VR knife so the controller remains its only visual motion source.</summary>
+[HarmonyPatch(typeof(PlayerToolMovement), "ApplyPosRotToModel")]
+internal static class VRKnifeSwayPatches
+{
+    [HarmonyPostfix]
+    private static void RemoveKnifeSway(PlayerToolMovement __instance)
+    {
+        if (!Plugin.HeadsetActive) return;
+        try
+        {
+            if (__instance._player == null || __instance._player.Owner == null ||
+                !__instance._player.Owner.IsLocalClient) return;
+            var tool = __instance.CurrentTool;
+            if (tool is Melee melee && PunchPatches.IsKnife(melee))
+                PlayerToolMovementPatches.ResetKnifeSway(tool);
+        }
+        catch { }
     }
 }
 
@@ -511,18 +625,32 @@ internal static class FishingPhysicalReelPatches
     private const float CrankFastAngVel = 380f;
     // cap for the game's reel-speed multiplier while fast-cranking
     private const float MaxReelMulti = 4f;
+    // The crab rod's native button-reel rate is intentionally very fast. Keep the proven native reel
+    // loop for physical cranking, but temporarily scale that rate while the hand is actually cranking.
+    private const float CrabPhysicalReelSpeedScale = 0.60f;
 
     private static float _lastAngle;
     private static bool _angleValid;
     private static float _angVel;
     private static bool _wasCranking;
     private static bool _wasTwoHand;
+    private static FishingRod _trackedRod;
+    private static FishingRodCrab _scaledCrabRod;
+    private static float _unscaledCrabHoldSpeed;
 
     [HarmonyPrefix]
     [HarmonyPatch("FixedUpdate")]
     private static void PhysicalReel(FishingRod __instance)
     {
         if (!Plugin.VREnabled) return;
+        if (_trackedRod != __instance)
+        {
+            _trackedRod = __instance;
+            _angleValid = false;
+            _angVel = 0f;
+            _wasCranking = false;
+            _wasTwoHand = false;
+        }
         // Physical reeling ONLY while two-handing the rod (holding the reel with the off hand). The reason
         // it "mostly didn't work / wouldn't even grip" is fixed at the grip-detection SOURCE (ComputeGripTargets
         // now resolves the rod off-grip to the CRANK even when the rod has no HandModelLeft, + a generous
@@ -530,7 +658,10 @@ internal static class FishingPhysicalReelPatches
         bool twoHand = PlayerToolMovementPatches.RodTwoHand;
         if (!twoHand)
         {
+            // Do not leave a physically-driven reel latched on after the support hand releases.
+            if (_wasTwoHand && !RightTriggerHeld()) __instance._isReelingIn = false;
             _angleValid = false;
+            _angVel = 0f;
             _wasCranking = false;
             _wasTwoHand = false;
             return;
@@ -541,34 +672,35 @@ internal static class FishingPhysicalReelPatches
             if (holder == null || holder.Owner == null || !holder.Owner.IsLocalClient)
             {
                 _angleValid = false;
+                _angVel = 0f;
                 _wasCranking = false;
                 _wasTwoHand = false;
                 return;
             }
         }
-        catch { _angleValid = false; _wasCranking = false; _wasTwoHand = false; return; }
+        catch { _angleValid = false; _angVel = 0f; _wasCranking = false; _wasTwoHand = false; return; }
 
         var rig = VRRig.Instance;
-        if (rig == null || rig.OffHand == null || rig.MainHand == null) { _angleValid = false; return; }
+        if (rig == null || rig.OffHand == null || rig.MainHand == null) { _angleValid = false; _angVel = 0f; return; }
         // Crank spin transform: prefer _crank, fall back to the crank handle / its hand holder (some rods
         // leave _crank unassigned, which silently killed physical reeling — "physical reeling didn't work").
         var crank = __instance._crank;
         if (crank == null) crank = __instance._crankHandle;
         if (crank == null) crank = __instance._crankHandleHandHolder;
-        if (crank == null) { _angleValid = false; _wasCranking = false; _wasTwoHand = false; return; }
+        if (crank == null) { _angleValid = false; _angVel = 0f; _wasCranking = false; _wasTwoHand = false; return; }
 
         // AUTO REEL MODE: the instant the two-hand grip engages while the line is still reeling out (just
         // cast), switch to reeling-in so cranking works immediately — no reel-button press first.
-        if (!_wasTwoHand && twoHand && __instance._isReelingOut && __instance is FishingRodCast cast0)
+        if (!_wasTwoHand && twoHand && __instance._isReelingOut)
         {
-            cast0.StartReel();
+            StopReelOutForPhysicalCrank(__instance);
         }
         _wasTwoHand = twoHand;
 
-        // The off hand orbits the reel's spin axis as you crank. The crank's spin axis is its local Z
-        // (the game animates _crank.localEulerAngles.z with the line length).
+        // The standard rod spins its crank around local Z. FishingRodCrab is authored differently and
+        // animates the crank angle on local X; using Z for it made a real orbit project to almost zero.
         Vector3 center = crank.position;
-        Vector3 axis = crank.TransformDirection(Vector3.forward);
+        Vector3 axis = crank.TransformDirection(__instance is FishingRodCrab ? Vector3.right : Vector3.forward);
         float positionalAngVel = 0f;
         Vector3 p = rig.OffHand.position - center;
         Vector3 v = p - axis * Vector3.Dot(p, axis);
@@ -620,27 +752,78 @@ internal static class FishingPhysicalReelPatches
         if (cranking)
         {
             // If still reeling out for any reason, transition now (also covers cranking right after a cast).
-            if (__instance._isReelingOut && __instance is FishingRodCast cast1)
+            if (__instance._isReelingOut)
             {
-                cast1.StartReel();
+                StopReelOutForPhysicalCrank(__instance);
             }
 
-            // Drive the game's OWN reel: regular cranking = regular hold-reel rate (_holdReelSpeed);
-            // fast cranking pumps the game's own _curReelSpeedMulti so steps come faster (spam mode).
-            // The game's own FixedUpdate decay (_reelMultiDecreaseSpeed) pulls it back when you slow down.
-            __instance._isReelingIn = true;
-            if (_angVel > CrankFastAngVel)
-                __instance._curReelSpeedMulti = Mathf.Min(
-                    __instance._curReelSpeedMulti + __instance._reelMultiIncreaseSpeed * Time.fixedDeltaTime * (_angVel / CrankFastAngVel),
-                    MaxReelMulti);
+            if (__instance is FishingRodCrab)
+            {
+                // This is the same `_isReelingIn` path that was confirmed to detect the crab crank.
+                // Scaling _holdReelSpeed only for this FixedUpdate makes it slower without replacing
+                // the rod's own line-step/audio/network behavior (the manual-step replacement could
+                // appear to do nothing until a whole hidden step accumulated).
+                var crab = (FishingRodCrab)__instance;
+                _scaledCrabRod = crab;
+                _unscaledCrabHoldSpeed = crab._holdReelSpeed;
+                crab._holdReelSpeed = _unscaledCrabHoldSpeed * CrabPhysicalReelSpeedScale;
+                __instance._isReelingIn = true;
+                // Use the exact same fast-crank multiplier as the regular rod. Besides increasing the
+                // reel rate, this is the game's own state that drives its fast-reeling presentation/text.
+                if (_angVel > CrankFastAngVel)
+                    __instance._curReelSpeedMulti = Mathf.Min(
+                        __instance._curReelSpeedMulti + __instance._reelMultiIncreaseSpeed * Time.fixedDeltaTime * (_angVel / CrankFastAngVel),
+                        MaxReelMulti);
+            }
+            else
+            {
+                // Drive the standard rod's own reel: regular cranking = regular hold-reel rate;
+                // fast cranking pumps the game's own speed multiplier.
+                __instance._isReelingIn = true;
+                if (_angVel > CrankFastAngVel)
+                    __instance._curReelSpeedMulti = Mathf.Min(
+                        __instance._curReelSpeedMulti + __instance._reelMultiIncreaseSpeed * Time.fixedDeltaTime * (_angVel / CrankFastAngVel),
+                        MaxReelMulti);
+            }
         }
-        else if (_wasCranking)
+        else
         {
-            // Stopped cranking: clear the reel state unless the reel button (right trigger) is held.
-            bool buttonHeld = false;
-            try { buttonHeld = VRActions.Instance.RightTrigger.ReadValue<float>() >= 0.5f; } catch { }
-            if (!buttonHeld) __instance._isReelingIn = false;
+            // Latching the crab rod must not inherit its prefab's default `_isReelingIn = true` state.
+            // Physical grip alone is idle; only actual crank motion or the normal reel trigger may reel.
+            __instance._isReelingIn = RightTriggerHeld();
         }
         _wasCranking = cranking;
+    }
+
+    [HarmonyPostfix]
+    [HarmonyPatch("FixedUpdate")]
+    private static void RestoreCrabReelRate(FishingRod __instance)
+    {
+        if (_scaledCrabRod == null || _scaledCrabRod != __instance) return;
+        _scaledCrabRod._holdReelSpeed = _unscaledCrabHoldSpeed;
+        _scaledCrabRod = null;
+    }
+
+    private static bool RightTriggerHeld()
+    {
+        try { return VRActions.Instance != null && VRActions.Instance.RightTrigger.ReadValue<float>() >= 0.5f; }
+        catch { return false; }
+    }
+
+    private static void StopReelOutForPhysicalCrank(FishingRod rod)
+    {
+        if (rod == null || !rod._isReelingOut) return;
+        if (rod is FishingRodCast cast)
+        {
+            cast.StartReel();
+            return;
+        }
+
+        // FishingRodCrab has its own private StopReelOut method. Its reel-out loop already maintains
+        // _curLineLengthMulti, so these are the same essential state changes needed to let the inherited
+        // FishingRod.FixedUpdate consume physical reel steps immediately.
+        rod._isReelingOut = false;
+        rod._lineReelVelRef = 0f;
+        rod._curReelSpeedMulti = 1f;
     }
 }

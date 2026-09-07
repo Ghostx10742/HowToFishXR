@@ -34,20 +34,11 @@ public static class OpenXRBoot
             BuildSettings();
 
             if (!VerifySubsystemManifest())
-            {
-                Plugin.Logger.LogError(
-                    "OpenXR subsystem descriptors not found. The native UnityOpenXR plugin / manifest " +
-                    "was not staged into How to Fish_Data. Check the preloader ran.");
                 return false;
-            }
 
             // Initialize + start the loader.
             if (!InitAndStart())
-            {
-                Plugin.Logger.LogError("OpenXR loader failed to produce a display subsystem. " +
-                                       "Is a headset connected and an OpenXR runtime active (SteamVR/Oculus/VD)?");
                 return false;
-            }
 
             // Keep XR alive when the game window loses focus.
             try
@@ -64,11 +55,7 @@ public static class OpenXRBoot
             Running = true;
             return true;
         }
-        catch (Exception ex)
-        {
-            Plugin.Logger.LogError($"Exception while starting OpenXR: {ex}");
-            return false;
-        }
+        catch { return false; }
     }
 
     public static void Stop()
@@ -184,8 +171,6 @@ public static class OpenXRBoot
             }
             catch { }
         }
-        if (list.Count == 0)
-            Plugin.Logger.LogError("OpenXR started without any controller interaction profiles; motion-controller input will not work.");
         return list.ToArray();
     }
 
@@ -279,15 +264,20 @@ public static class OpenXRBoot
     private static void SetFeatures(OpenXRSettings settings, OpenXRFeature[] features)
     {
         // 'features' is an internal property/field on OpenXRSettings.
-        var prop = AccessTools.Property(typeof(OpenXRSettings), "features");
+        const System.Reflection.BindingFlags flags =
+            System.Reflection.BindingFlags.Instance |
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic;
+        var prop = typeof(OpenXRSettings).GetProperty("features", flags);
         if (prop != null && prop.CanWrite)
         {
             prop.SetValue(settings, features);
             return;
         }
-        var field = AccessTools.Field(typeof(OpenXRSettings), "features")
-                    ?? AccessTools.Field(typeof(OpenXRSettings), "m_features")
-                    ?? AccessTools.Field(typeof(OpenXRSettings), "featureSets");
+        var type = typeof(OpenXRSettings);
+        var field = type.GetField("features", flags)
+                    ?? type.GetField("m_features", flags)
+                    ?? type.GetField("featureSets", flags);
         field?.SetValue(settings, features);
     }
 }
