@@ -40,6 +40,7 @@ Button names use the familiar Meta/PICO layout. Valve Index, Vive, WMR, and othe
 | Right trigger | Fire, use, punch, or hold to reel in; click/drag menus with the right-hand laser |
 | Left trigger | Secondary use; hold and release to cast or reel out |
 | Right grip | Pick up, interact, and enter/exit the boat |
+| Left grip—press once | **F / Inspect** the held item |
 | Left grip near a gun | Grab the foregrip for two-handed aiming |
 | Left grip near a fishing reel | Latch onto the reel for physical reeling |
 | Left grip near a non-tool item/body | Visually latch the second hand; the main hand keeps control |
@@ -48,7 +49,6 @@ Button names use the familiar Meta/PICO layout. Valve Index, Vive, WMR, and othe
 | Hold left grip + B | Drop; hold B to charge and release to throw |
 | X / left primary | Reload a gun |
 | Y / left secondary | Pause/unpause |
-| Left grip (press once) | Inspect the held item—the game's **F / Inspect** action |
 | F1 or both stick clicks | Open/close VR Settings while the main or pause menu is open |
 | F2 | Recenter forward direction |
 | F3 | Start standing-height and body calibration |
@@ -246,7 +246,7 @@ HowToFishXR is open source under the **Apache License 2.0**. You may inspect, mo
 ## Credits
 
 - Created and directed by **J_axon**.
-- Testers: **Aeolian**, **Feesh**, **mrbub**, **supersaiyanslyr**, **VernalWitch**, and **Wake**.
+- Testers: **Aeolian**, **Feesh**, **mrbub**, **Nuggies**, **supersaiyanslyr**, **VernalWitch**, and **Wake**.
 
 ## AI disclosure
 

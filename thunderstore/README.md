@@ -32,6 +32,7 @@ HowToFishXR is completely free and nothing is locked behind payment. Donations a
 | Right trigger | Fire, use, punch, reel in, or click/drag menus |
 | Left trigger | Secondary use; hold and release to cast or reel out |
 | Right grip | Pick up, interact, or enter/exit the boat |
+| Left grip—press once | **F / Inspect** the held item |
 | Left grip near a gun | Two-handed aiming |
 | Left grip near a fishing reel | Physical reeling |
 | Left grip near a non-tool item/body | Visually latch the second hand |
@@ -40,7 +41,6 @@ HowToFishXR is completely free and nothing is locked behind payment. Donations a
 | Hold left grip + B | Drop; hold B to charge and release to throw |
 | X / left primary | Reload a gun |
 | Y / left secondary | Pause/unpause |
-| Left grip (press once) | Inspect the held item—the game's **F / Inspect** action |
 | F1 or both stick clicks | Open VR Settings while a menu is visible |
 | F2 | Recenter view |
 | F3 | Calibrate height and body |
@@ -151,7 +151,7 @@ The optional [Ko-fi support page](https://ko-fi.com/j_axon) is also linked near 
 ## Credits
 
 - Created and directed by **J_axon**.
-- Testers: **Aeolian**, **Feesh**, **mrbub**, **supersaiyanslyr**, **VernalWitch**, and **Wake**.
+- Testers: **Aeolian**, **Feesh**, **mrbub**, **Nuggies**, **supersaiyanslyr**, **VernalWitch**, and **Wake**.
 
 ## AI disclosure
 
