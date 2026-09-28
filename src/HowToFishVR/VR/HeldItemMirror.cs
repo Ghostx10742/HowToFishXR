@@ -1,5 +1,4 @@
 using HarmonyLib;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace HowToFishVR.VR;
@@ -14,9 +13,8 @@ internal static class HeldItemMirror
 {
     private static Item _item;
     private static Vector3 _originalScale;
-    private static readonly List<Renderer> RadarRenderers = new();
-    private static readonly List<Material[]> RadarMaterials = new();
-    private static readonly List<Material> RadarMaterialCopies = new();
+    private static Transform _radarDisplay;
+    private static Vector3 _radarDisplayScale;
 
     internal static bool IsMirrored(Item item) => item != null && item == _item;
     internal static bool Contains(Transform node) => _item != null && node != null &&
@@ -46,63 +44,33 @@ internal static class HeldItemMirror
             if (next == null) return;
             _item = next;
             _originalScale = next.transform.localScale;
-            UnmirrorRadarTexture(next);
+            CaptureRadarDisplay(next);
         }
         if (_item != null)
             _item.transform.localScale = new Vector3(-_originalScale.x, _originalScale.y, _originalScale.z);
+        if (_radarDisplay != null)
+            _radarDisplay.localScale = new Vector3(-_radarDisplayScale.x, _radarDisplayScale.y, _radarDisplayScale.z);
     }
 
     internal static void Restore(Item item = null)
     {
         if (item != null && item != _item) return;
-        RestoreRadarMaterials();
+        if (_radarDisplay != null) _radarDisplay.localScale = _radarDisplayScale;
+        _radarDisplay = null;
         if (_item != null) _item.transform.localScale = _originalScale;
         _item = null;
     }
 
-    // The handheld radar is the item named "Map". Its sweep/map is supplied through the
-    // custom _Colors texture property. Reflecting the whole item reverses that display, so
-    // counter-reflect only this texture's U coordinates on private material copies. The case,
-    // grip, animation, and every other held item continue to use the normal hierarchy mirror.
-    private static void UnmirrorRadarTexture(Item item)
+    // The live radar is a world-space UI canvas, separate from the casing mesh.
+    // Its local X axis matches item X. A second X reflection cancels the item's
+    // reflection for the whole display: text, grid, sweep, and dynamically moving dots.
+    // Selecting RadarUI's own canvas limits this exception to the actual radar display.
+    private static void CaptureRadarDisplay(Item item)
     {
-        if (item == null || (item.name != "Map" && item.name != "Map(Clone)")) return;
-
-        foreach (var renderer in item.GetComponentsInChildren<Renderer>(true))
-        {
-            var originals = renderer.sharedMaterials;
-            Material[] replacements = null;
-            for (int i = 0; i < originals.Length; i++)
-            {
-                var source = originals[i];
-                if (source == null || !source.HasProperty("_Colors")) continue;
-                if (replacements == null) replacements = (Material[])originals.Clone();
-
-                var copy = new Material(source) { name = source.name + " (VR radar unmirrored)" };
-                Vector2 scale = source.GetTextureScale("_Colors");
-                Vector2 offset = source.GetTextureOffset("_Colors");
-                copy.SetTextureScale("_Colors", new Vector2(-scale.x, scale.y));
-                copy.SetTextureOffset("_Colors", new Vector2(offset.x + scale.x, offset.y));
-                replacements[i] = copy;
-                RadarMaterialCopies.Add(copy);
-            }
-
-            if (replacements == null) continue;
-            RadarRenderers.Add(renderer);
-            RadarMaterials.Add(originals);
-            renderer.sharedMaterials = replacements;
-        }
-    }
-
-    private static void RestoreRadarMaterials()
-    {
-        for (int i = 0; i < RadarRenderers.Count; i++)
-            if (RadarRenderers[i] != null) RadarRenderers[i].sharedMaterials = RadarMaterials[i];
-        foreach (var material in RadarMaterialCopies)
-            if (material != null) Object.Destroy(material);
-        RadarRenderers.Clear();
-        RadarMaterials.Clear();
-        RadarMaterialCopies.Clear();
+        var radar = item.GetComponentInChildren<RadarUI>(true);
+        if (radar == null || radar.GetComponent<Canvas>() == null) return;
+        _radarDisplay = radar.transform;
+        _radarDisplayScale = _radarDisplay.localScale;
     }
 
     // Pose solvers use rotation-only offsets, not InverseTransformPoint, which would undo

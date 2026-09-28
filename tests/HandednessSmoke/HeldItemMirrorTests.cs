@@ -39,22 +39,8 @@ internal static class HeldItemMirrorTests
                 Vector3[] before = nodes.Select(n => n.TransformPoint(probe)).ToArray();
                 Vector3 origin = root.position;
                 Quaternion rotation = root.rotation;
-                Renderer radarRenderer = null;
-                Material radarMaterial = null;
-                Vector2 radarScale = default;
-                Vector2 radarOffset = default;
-                if (prefab.name == "Map")
-                {
-                    radarRenderer = root.GetComponentsInChildren<Renderer>(true)
-                        .FirstOrDefault(r => r.sharedMaterials.Any(m => m != null && m.HasProperty("_Colors")));
-                    radarMaterial = radarRenderer?.sharedMaterials
-                        .FirstOrDefault(m => m != null && m.HasProperty("_Colors"));
-                    if (radarMaterial != null)
-                    {
-                        radarScale = radarMaterial.GetTextureScale("_Colors");
-                        radarOffset = radarMaterial.GetTextureOffset("_Colors");
-                    }
-                }
+                var radarCanvas = prefab.name == "Map" ? root.Find("MapCanvas") : null;
+                Vector3 radarScale = radarCanvas != null ? radarCanvas.localScale : Vector3.one;
                 try
                 {
                     set.Invoke(null, new object[] { item });
@@ -63,20 +49,40 @@ internal static class HeldItemMirrorTests
                     for (int i = 0; i < nodes.Length; i++)
                     {
                         Vector3 expected = origin + rotation * Reflect(Quaternion.Inverse(rotation) * (before[i] - origin));
+                        if (radarCanvas != null && (nodes[i] == radarCanvas || nodes[i].IsChildOf(radarCanvas)))
+                            expected = before[i];
                         if (Vector3.Distance(nodes[i].TransformPoint(probe), expected) > 0.0005f) reflected = false;
                     }
                     check(reflected, prefab.name + ": complete hierarchy reflected once");
 
                     if (prefab.name == "Map")
                     {
-                        var display = radarRenderer?.sharedMaterials
-                            .FirstOrDefault(m => m != null && m.HasProperty("_Colors"));
-                        check(radarMaterial != null && display != null && display != radarMaterial &&
-                              Vector2.Distance(display.GetTextureScale("_Colors"),
-                                  new Vector2(-radarScale.x, radarScale.y)) < 0.0001f &&
-                              Vector2.Distance(display.GetTextureOffset("_Colors"),
-                                  new Vector2(radarOffset.x + radarScale.x, radarOffset.y)) < 0.0001f,
-                            "Map: animated radar texture is counter-reflected only once");
+                        check(radarCanvas != null, "Map: actual display canvas located");
+                        var mapRotation = radarCanvas.Find("MapMask/MapRotation");
+                        var dot = mapRotation.Find("IslandDots/IslandDot");
+                        Vector3 savedPosition = dot.localPosition;
+                        Quaternion savedRotation = mapRotation.localRotation;
+                        bool correctMotion = true;
+                        foreach (float angle in new[] { 0f, 43f, 127f })
+                        {
+                            restore.Invoke(null, new object[] { item });
+                            mapRotation.localRotation = Quaternion.Euler(0f, 0f, angle);
+                            dot.localPosition = new Vector3(0.031f, -0.017f, 0f);
+                            Vector3 normalStart = dot.position;
+                            dot.localPosition += new Vector3(0.019f, 0.027f, 0f);
+                            Vector3 normalEnd = dot.position;
+                            set.Invoke(null, new object[] { item });
+                            correctMotion &= Vector3.Distance(dot.position, normalEnd) < 0.0001f;
+                            dot.localPosition -= new Vector3(0.019f, 0.027f, 0f);
+                            correctMotion &= Vector3.Distance(dot.position, normalStart) < 0.0001f;
+                        }
+                        dot.localPosition = savedPosition;
+                        mapRotation.localRotation = savedRotation;
+                        check(correctMotion, "Map: live dot position and movement match normal display at three headings");
+                        var title = radarCanvas.Find("TitleText");
+                        check(Vector3.Dot(title.TransformVector(Vector3.right).normalized,
+                            rotation * Vector3.right) > 0.999f,
+                            "Map: title text reads in original horizontal direction");
                     }
 
                     var grip = item.HandModelRight;
@@ -146,8 +152,8 @@ internal static class HeldItemMirrorTests
                     item.Drop();
                     check(root.localScale.x >= 0f, prefab.name + ": Drop hook removes reflection");
                     if (prefab.name == "Map")
-                        check(radarRenderer != null && radarRenderer.sharedMaterials.Contains(radarMaterial),
-                            "Map: Drop hook restores the original radar material");
+                        check(radarCanvas != null && Vector3.Distance(radarCanvas.localScale, radarScale) < 0.0001f,
+                            "Map: Drop hook restores the original display scale");
                 }
                 finally
                 {
