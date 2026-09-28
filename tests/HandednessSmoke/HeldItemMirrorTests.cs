@@ -39,6 +39,22 @@ internal static class HeldItemMirrorTests
                 Vector3[] before = nodes.Select(n => n.TransformPoint(probe)).ToArray();
                 Vector3 origin = root.position;
                 Quaternion rotation = root.rotation;
+                Renderer radarRenderer = null;
+                Material radarMaterial = null;
+                Vector2 radarScale = default;
+                Vector2 radarOffset = default;
+                if (prefab.name == "Map")
+                {
+                    radarRenderer = root.GetComponentsInChildren<Renderer>(true)
+                        .FirstOrDefault(r => r.sharedMaterials.Any(m => m != null && m.HasProperty("_Colors")));
+                    radarMaterial = radarRenderer?.sharedMaterials
+                        .FirstOrDefault(m => m != null && m.HasProperty("_Colors"));
+                    if (radarMaterial != null)
+                    {
+                        radarScale = radarMaterial.GetTextureScale("_Colors");
+                        radarOffset = radarMaterial.GetTextureOffset("_Colors");
+                    }
+                }
                 try
                 {
                     set.Invoke(null, new object[] { item });
@@ -50,6 +66,18 @@ internal static class HeldItemMirrorTests
                         if (Vector3.Distance(nodes[i].TransformPoint(probe), expected) > 0.0005f) reflected = false;
                     }
                     check(reflected, prefab.name + ": complete hierarchy reflected once");
+
+                    if (prefab.name == "Map")
+                    {
+                        var display = radarRenderer?.sharedMaterials
+                            .FirstOrDefault(m => m != null && m.HasProperty("_Colors"));
+                        check(radarMaterial != null && display != null && display != radarMaterial &&
+                              Vector2.Distance(display.GetTextureScale("_Colors"),
+                                  new Vector2(-radarScale.x, radarScale.y)) < 0.0001f &&
+                              Vector2.Distance(display.GetTextureOffset("_Colors"),
+                                  new Vector2(radarOffset.x + radarScale.x, radarOffset.y)) < 0.0001f,
+                            "Map: animated radar texture is counter-reflected only once");
+                    }
 
                     var grip = item.HandModelRight;
                     if (grip != null)
@@ -117,6 +145,9 @@ internal static class HeldItemMirrorTests
                     // The inactive clone has no holder; vanilla Drop returns without gameplay.
                     item.Drop();
                     check(root.localScale.x >= 0f, prefab.name + ": Drop hook removes reflection");
+                    if (prefab.name == "Map")
+                        check(radarRenderer != null && radarRenderer.sharedMaterials.Contains(radarMaterial),
+                            "Map: Drop hook restores the original radar material");
                 }
                 finally
                 {
