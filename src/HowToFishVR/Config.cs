@@ -45,6 +45,16 @@ public static class VRConfig
 
     // ---- General ----
     public static ConfigEntry<float> WorldScale;
+    public static ConfigEntry<bool> LeftHanded;
+    // Freeze hand roles for the session: input bindings, grip caches and active gestures must agree.
+    public static bool IsLeftHanded { get; private set; }
+    public static UnityEngine.XR.XRNode MainHandNode => IsLeftHanded
+        ? UnityEngine.XR.XRNode.LeftHand : UnityEngine.XR.XRNode.RightHand;
+
+    internal static string HandedControlPath(string path) => !IsLeftHanded ? path : path
+        .Replace("{LeftHand}", "{SupportSwap}")
+        .Replace("{RightHand}", "{LeftHand}")
+        .Replace("{SupportSwap}", "{RightHand}");
 
     // ---- Calibration ----
     public static ConfigEntry<bool> RoomscaleMovement;
@@ -101,6 +111,9 @@ public static class VRConfig
     {
         DisableVR = cfg.Bind("General", "Disable VR", false,
             "Start How to Fish in flatscreen mode while keeping the mod installed. Can also be overridden for one launch with the --disable-vr Steam launch option. Restart required.");
+        LeftHanded = cfg.Bind("General", "Left Handed", false,
+            "Hold tools and aim with the left hand; mirror all default controller buttons and sticks, including menu pointing. Restart required.");
+        IsLeftHanded = LeftHanded.Value;
         WorldScale = cfg.Bind("General", "World Scale", 1.0f,
             new ConfigDescription("Scales your perceived size in the world. 1.0 = default.",
                 new AcceptableValueRange<float>(0.5f, 2.0f)));
@@ -133,9 +146,9 @@ public static class VRConfig
             new ConfigDescription("Multiplier for boat steering from the movement stick.",
                 new AcceptableValueRange<float>(0.3f, 2.5f)));
         SprintMode = cfg.Bind("Locomotion", "Sprint Mode", ButtonMode.Hold,
-            "Left thumbstick click. Hold = sprint while held; Toggle = click to toggle.");
+            "Support-hand thumbstick click. Hold = sprint while held; Toggle = click to toggle.");
         CrouchMode = cfg.Bind("Locomotion", "Crouch Mode", ButtonMode.Toggle,
-            "Right thumbstick click. Toggle = click to toggle (default); Hold = crouch while held.");
+            "Main-hand thumbstick click. Toggle = click to toggle (default); Hold = crouch while held.");
 
         HudFollowsHead = cfg.Bind("HUD", "HUD Follows Head", true,
             "HUD rotates with head yaw but stays level (not pitched up/down), floating in front of you.");

@@ -118,7 +118,7 @@ public class VRLaser : MonoBehaviour
         if (r?.Go == null) return;
         var rig = VR.VRRig.Instance;
         if (rig == null) return;
-        var hand = r.Left ? rig.LeftHand : rig.RightHand;
+        var hand = rig.MainHand;
         if (hand != null) r.Go.transform.SetPositionAndRotation(hand.position, hand.rotation * PointerTilt);
     }
 

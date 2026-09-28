@@ -105,6 +105,7 @@ internal static class PlayerToolMovementPatches
         try { if (Boat.IsDrivingLocally) { _gunTwoHand = false; _rodTwoHand = false; _toolInit = false; _recoilInit = false; ClearGripTargets(); return; } } catch { }
         var rig = VRRig.Instance;
         if (rig == null) return;
+        HeldItemMirror.Refresh();
 
         var tool = __instance.CurrentTool;
         if (tool == null || tool.transform == null)
@@ -139,18 +140,28 @@ internal static class PlayerToolMovementPatches
         // Use EACH ITEM'S OWN grip transform (HandModelRight/Left) so every item is held natively by its
         // own grip point AND orientation — no per-item eyeballing. gripLocal* is that grip pose expressed
         // in the tool's local frame (constant per item, so it works for any item automatically).
+        // Keep the original right main grip for every tool, including both rods. Reflecting
+        // the complete hierarchy already puts that grip on the other side of the model.
         Transform gripModel = null;
-        try { gripModel = tool.HandModelRight; } catch { }
+        try
+        {
+            gripModel = tool.HandModelRight;
+        }
+        catch { }
         bool haveGrip = gripModel != null;
         bool useGripForRoot = haveGrip && !isKnife;
-        Vector3 gripLocalPos = haveGrip ? tool.transform.InverseTransformPoint(gripModel.position) : Vector3.zero;
+        Vector3 gripLocalPos = haveGrip ? HeldItemMirror.RootOffset(tool, gripModel.position) : Vector3.zero;
 
         // One-hand rotation follows the hand. Guns AND fishing rods use the exact same permanent
         // controller-local position calibration as the visible hand bone. Keep the legacy palm nudge
         // only for other tools whose already-approved placement must remain unchanged.
         bool mainIsLeft = main == rig.LeftHand;
         bool offIsLeft = off == rig.LeftHand;
-        Quaternion oneHandRot = main.rotation * ToolRotOffset;
+        // Keep the tool's proven controller-driven aiming orientation on either hand. A tool's
+        // r_IK marker is an animated wrist reference, not the tool's aim axis: deriving root
+        // rotation from that marker swung the fishing rod far away from the controller.
+        Quaternion oneHandRot = main.rotation *
+            (HeldItemMirror.IsMirrored(tool) ? HeldItemMirror.Reflect(ToolRotOffset) : ToolRotOffset);
         Vector3 palmNudge = main.rotation * new Vector3(0f, -0.035f, -0.03f);
         bool useCalibratedHandAnchors = weapon != null || isRod || isKnife;
         Vector3 mainAnchor = useCalibratedHandAnchors
@@ -187,7 +198,7 @@ internal static class PlayerToolMovementPatches
         }
         bool haveOffGrip = offGripModel != null;
         Vector3 offGripLocalPos = haveOffGrip
-            ? tool.transform.InverseTransformPoint(offGripModel.position)
+            ? HeldItemMirror.RootOffset(tool, offGripModel.position)
             : gripLocalPos + Vector3.forward * ForegripDistance;
         float offGrip = off == rig.LeftHand
             ? VRActions.Instance.LeftGrip.ReadValue<float>()
@@ -250,7 +261,8 @@ internal static class PlayerToolMovementPatches
                 try
                 {
                     if (weapon.Attachments != null && weapon.Attachments.FirePoint != null)
-                        localAimAxis = tool.transform.InverseTransformDirection(weapon.Attachments.FirePoint.forward);
+                        localAimAxis = Quaternion.Inverse(tool.transform.rotation) *
+                            weapon.Attachments.FirePoint.TransformVector(Vector3.forward).normalized;
                     else if (haveOffGrip)
                         localAimAxis = offGripLocalPos - gripLocalPos;
                 }
@@ -326,6 +338,11 @@ internal static class PlayerToolMovementPatches
                 recoilRot = Quaternion.identity;
                 recoilPos = Vector3.zero;
             }
+            if (HeldItemMirror.IsMirrored(tool))
+            {
+                recoilRot = HeldItemMirror.Reflect(recoilRot);
+                recoilPos = HeldItemMirror.Reflect(recoilPos);
+            }
             finalRot = rot * recoilRot;
             finalPos = basePos + finalRot * recoilPos;
         }
@@ -379,7 +396,7 @@ internal static class PlayerToolMovementPatches
                 melee._origRot == null || melee._origRot.Length < 1) return;
 
             var rig = VRRig.Instance;
-            var controller = rig != null ? rig.RightHand : null;
+            var controller = rig != null ? rig.MainHand : null;
             var knifeNode = melee._hands[0];
             var ht = melee.HandTransformsRight;
             if (controller == null || knifeNode.parent == null || ht == null || !ht.Exists || ht.Parent == null)
@@ -393,20 +410,12 @@ internal static class PlayerToolMovementPatches
 
             if (!_knifeFromHandValid)
             {
-                Vector3 authoredHandPos = ht.Parent.TransformPoint(ht.HandPos);
-                Quaternion authoredHandRot = ht.Parent.rotation * ht.HandRot;
-                Vector3 authoredKnifePos = knifeNode.parent.TransformPoint(melee._origPos[0]);
-                Quaternion authoredKnifeRot = knifeNode.parent.rotation * melee._origRot[0];
-                _knifeFromHandPos = Quaternion.Inverse(authoredHandRot) * (authoredKnifePos - authoredHandPos);
-                _knifeFromHandRot = Quaternion.Inverse(authoredHandRot) * authoredKnifeRot;
+                HeldItemMirror.CapturePartPose(melee, knifeNode, melee._origPos[0], melee._origRot[0], ht,
+                    out _knifeFromHandPos, out _knifeFromHandRot);
                 _knifeFromHandValid = true;
             }
 
-            Quaternion desiredHandRot = controller.rotation * PlayerHandsPatches.RightGripOffset;
-            Vector3 handAnchor = PlayerHandsPatches.CalibratedHandPosition(controller, isLeft: false);
-            knifeNode.SetPositionAndRotation(
-                handAnchor + desiredHandRot * _knifeFromHandPos,
-                desiredHandRot * _knifeFromHandRot);
+            HeldItemMirror.PlacePartFromHand(melee, knifeNode, controller, false, _knifeFromHandPos, _knifeFromHandRot);
         }
         catch { }
     }
@@ -436,7 +445,8 @@ internal static class PlayerToolMovementPatches
             for (int side = 0; side < 2; side++)
             {
                 bool isLeft = side == 1; // game arrays are authored right, then left
-                Transform controller = isLeft ? rig.LeftHand : rig.RightHand;
+                bool physicalLeft = isLeft ^ HeldItemMirror.IsMirrored(melee);
+                Transform controller = physicalLeft ? rig.LeftHand : rig.RightHand;
                 Transform fist = melee._hands[side];
                 var ht = isLeft ? melee.HandTransformsLeft : melee.HandTransformsRight;
                 if (fist == null || controller == null || ht == null || !ht.Exists || ht.Parent == null || fist.parent == null)
@@ -444,28 +454,18 @@ internal static class PlayerToolMovementPatches
 
                 if (!_fistFromHandValid[side])
                 {
-                    Vector3 authoredHandPos = ht.Parent.TransformPoint(ht.HandPos);
-                    Quaternion authoredHandRot = ht.Parent.rotation * ht.HandRot;
-                    Vector3 authoredFistPos = fist.parent.TransformPoint(melee._origPos[side]);
-                    Quaternion authoredFistRot = fist.parent.rotation * melee._origRot[side];
-                    _fistFromHandPos[side] = Quaternion.Inverse(authoredHandRot) * (authoredFistPos - authoredHandPos);
-                    _fistFromHandRot[side] = Quaternion.Inverse(authoredHandRot) * authoredFistRot;
+                    HeldItemMirror.CapturePartPose(melee, fist, melee._origPos[side], melee._origRot[side], ht,
+                        out _fistFromHandPos[side], out _fistFromHandRot[side]);
                     _fistFromHandValid[side] = true;
                 }
 
                 if (_fistFromHandValid[side])
                 {
-                    Quaternion gripOffset = isLeft
-                        ? PlayerHandsPatches.LeftGripOffset
-                        : PlayerHandsPatches.RightGripOffset;
-                    Quaternion desiredHandRot = controller.rotation * gripOffset;
                     // The visible hand bone uses the user's permanent controller-local position
                     // calibration. Anchor the knuckle mesh to that exact same point; using the raw
                     // controller origin here leaves both fists displaced from their hands.
-                    Vector3 handAnchor = PlayerHandsPatches.CalibratedHandPosition(controller, isLeft);
-                    fist.SetPositionAndRotation(
-                        handAnchor + desiredHandRot * _fistFromHandPos[side],
-                        desiredHandRot * _fistFromHandRot[side]);
+                    HeldItemMirror.PlacePartFromHand(melee, fist, controller, isLeft,
+                        _fistFromHandPos[side], _fistFromHandRot[side]);
                 }
             }
 
@@ -659,7 +659,7 @@ internal static class FishingPhysicalReelPatches
         if (!twoHand)
         {
             // Do not leave a physically-driven reel latched on after the support hand releases.
-            if (_wasTwoHand && !RightTriggerHeld()) __instance._isReelingIn = false;
+            if (_wasTwoHand && !MainTriggerHeld()) __instance._isReelingIn = false;
             _angleValid = false;
             _angVel = 0f;
             _wasCranking = false;
@@ -700,7 +700,7 @@ internal static class FishingPhysicalReelPatches
         // The standard rod spins its crank around local Z. FishingRodCrab is authored differently and
         // animates the crank angle on local X; using Z for it made a real orbit project to almost zero.
         Vector3 center = crank.position;
-        Vector3 axis = crank.TransformDirection(__instance is FishingRodCrab ? Vector3.right : Vector3.forward);
+        Vector3 axis = crank.TransformVector(__instance is FishingRodCrab ? Vector3.right : Vector3.forward).normalized;
         float positionalAngVel = 0f;
         Vector3 p = rig.OffHand.position - center;
         Vector3 v = p - axis * Vector3.Dot(p, axis);
@@ -790,7 +790,7 @@ internal static class FishingPhysicalReelPatches
         {
             // Latching the crab rod must not inherit its prefab's default `_isReelingIn = true` state.
             // Physical grip alone is idle; only actual crank motion or the normal reel trigger may reel.
-            __instance._isReelingIn = RightTriggerHeld();
+            __instance._isReelingIn = MainTriggerHeld();
         }
         _wasCranking = cranking;
     }
@@ -804,9 +804,9 @@ internal static class FishingPhysicalReelPatches
         _scaledCrabRod = null;
     }
 
-    private static bool RightTriggerHeld()
+    private static bool MainTriggerHeld()
     {
-        try { return VRActions.Instance != null && VRActions.Instance.RightTrigger.ReadValue<float>() >= 0.5f; }
+        try { return VRActions.Instance != null && VRActions.Instance.MainTrigger.ReadValue<float>() >= 0.5f; }
         catch { return false; }
     }
 

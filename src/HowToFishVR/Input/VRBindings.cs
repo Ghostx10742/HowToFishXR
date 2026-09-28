@@ -19,7 +19,8 @@ internal static class VRBindings
 {
     private static bool _injected;
 
-    // action name -> XR control path (canonical XRController controls; routing tuned in-headset)
+    // Right-handed defaults. Mirror only these added XR paths, never the game's original bindings.
+    // Physical pose/grip actions remain anatomical; main/support roles are selected separately.
     private static readonly (string action, string path)[] Map =
     {
         ("PlayerMove",       "<XRController>{LeftHand}/thumbstick"),
@@ -70,8 +71,9 @@ internal static class VRBindings
         var asset = input != null ? input.actions : null;
         if (asset == null) return false;
 
-        foreach (var (name, path) in Map)
+        foreach (var (name, defaultPath) in Map)
         {
+            string path = VRConfig.HandedControlPath(defaultPath);
             var action = asset.FindAction(name, throwIfNotFound: false);
             if (action == null)
             {
@@ -93,8 +95,9 @@ internal static class VRBindings
         // Interaction-based bindings (right grip tap = grab / hold = throw, B tap = change bait, left
         // grip tap = inspect). These must be checked separately because their interactions differ from
         // the plain Map entries and re-injection must not duplicate them.
-        foreach (var (name, path, interactions) in MapWithInteractions)
+        foreach (var (name, defaultPath, interactions) in MapWithInteractions)
         {
+            string path = VRConfig.HandedControlPath(defaultPath);
             var action = asset.FindAction(name, throwIfNotFound: false);
             if (action == null) continue;
 

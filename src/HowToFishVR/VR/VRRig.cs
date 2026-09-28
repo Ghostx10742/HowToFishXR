@@ -19,8 +19,8 @@ public class VRRig : MonoBehaviour
     public Transform LeftHand { get; private set; }
     public Transform RightHand { get; private set; }
 
-    public Transform MainHand => RightHand;
-    public Transform OffHand  => LeftHand;
+    public Transform MainHand => VRConfig.IsLeftHanded ? LeftHand : RightHand;
+    public Transform OffHand  => VRConfig.IsLeftHanded ? RightHand : LeftHand;
 
     /// <summary>Accumulated artificial yaw from snap/smooth turning and recentering (degrees).</summary>
     public float YawOffset;
@@ -511,7 +511,7 @@ public class VRRig : MonoBehaviour
                 // MAVR fires a haptic on each snap so you FEEL the turn.
                 try
                 {
-                    var d = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.RightHand);
+                    var d = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(VRConfig.MainHandNode);
                     if (d.isValid) d.SendHapticImpulse(0u, 0.35f, 0.06f);
                 }
                 catch { }

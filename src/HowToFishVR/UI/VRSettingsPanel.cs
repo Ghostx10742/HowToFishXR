@@ -548,6 +548,7 @@ public class VRSettingsPanel : MonoBehaviour
     {
         var list = new List<SettingRow>();
 
+        list.Add(Toggle("Left Handed (restart required)", () => VRConfig.LeftHanded.Value, v => VRConfig.LeftHanded.Value = v));
         list.Add(Stepper("Body", () => VRConfig.BodyMode.Value == BodyMode.FullBodyIK ? "Full Body" : "Hands Only",
             () => { VRConfig.BodyMode.Value = NextEnum(VRConfig.BodyMode.Value); HowToFishBody.ApplyBodyMode(); }));
         list.Add(Stepper("Turning", () => VRConfig.Turning.Value.ToString(), () => VRConfig.Turning.Value = NextEnum(VRConfig.Turning.Value)));

@@ -65,26 +65,28 @@ internal static class HeldItemHoldPatches
             var rig = VRRig.Instance;
             var held = h != null ? h._heldItem : null;
             if (rig == null || rig.MainHand == null || held == null || held.transform == null) return false;
+            HeldItemMirror.Refresh();
 
-            Quaternion gripOffset = PlayerHandsPatches.RightGripOffset;
-            Quaternion desiredHandRotation = rig.MainHand.rotation * gripOffset;
+            // The original main grip follows the same hierarchy reflection as the model.
+            Quaternion desiredHandRotation = PlayerHandsPatches.MainHandGripRotation(rig.MainHand);
+            Vector3 desiredHandPosition = rig.MainHand.position;
             var handPose = held.HandTransformsRight;
 
             if (handPose != null && handPose.Exists)
             {
                 Transform parent = handPose.Parent != null ? handPose.Parent : held.transform;
                 Vector3 gripWorldPosition = parent.TransformPoint(handPose.HandPos);
-                Quaternion gripWorldRotation = parent.rotation * handPose.HandRot;
-                Vector3 gripLocalPosition = held.transform.InverseTransformPoint(gripWorldPosition);
+                Quaternion gripWorldRotation = HeldItemMirror.HandRotation(parent, handPose.HandRot);
+                Vector3 gripLocalPosition = HeldItemMirror.RootOffset(held, gripWorldPosition);
                 Quaternion gripLocalRotation = Quaternion.Inverse(held.transform.rotation) * gripWorldRotation;
-
                 rotation = desiredHandRotation * Quaternion.Inverse(gripLocalRotation);
-                position = rig.MainHand.position - rotation * gripLocalPosition;
+                position = desiredHandPosition - rotation * gripLocalPosition;
                 return true;
             }
 
+            // Neither hand has an authored grip; only then use the item root as a fallback.
             rotation = desiredHandRotation;
-            position = rig.MainHand.position;
+            position = desiredHandPosition;
             return true;
         }
         catch { return false; }

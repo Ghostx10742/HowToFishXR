@@ -24,16 +24,16 @@ public class VRActions
     public readonly InputAction RightRotation;
 
     // Analog / buttons used directly by VR systems
-    public readonly InputAction TurnAxis;       // right thumbstick X (turn)
-    public readonly InputAction TurnAxisY;      // right thumbstick Y (inventory scroll)
-    public readonly InputAction MoveAxis;       // left thumbstick (also injected to PlayerMove)
+    public readonly InputAction TurnAxis;       // main-hand thumbstick X (turn)
+    public readonly InputAction TurnAxisY;      // main-hand thumbstick Y (inventory scroll)
+    public readonly InputAction MoveAxis;       // support-hand thumbstick (also injected to PlayerMove)
     public readonly InputAction LeftGrip;       // 0..1
     public readonly InputAction RightGrip;      // 0..1
     public readonly InputAction LeftTrigger;    // 0..1
     public readonly InputAction RightTrigger;   // 0..1
-    public readonly InputAction SprintButton;   // left thumbstick click
-    public readonly InputAction CrouchButton;   // right thumbstick click
-    public readonly InputAction Recenter;       // left secondary button (Y)
+    public readonly InputAction SprintButton;   // support-hand thumbstick click
+    public readonly InputAction CrouchButton;   // main-hand thumbstick click
+    public readonly InputAction Recenter;       // support-hand secondary button
 
     public static void Initialize()
     {
@@ -56,21 +56,21 @@ public class VRActions
         RightRotation = _map.AddAction("RightRotation", binding: "<XRController>{RightHand}/deviceRotation");
 
         TurnAxis = _map.AddAction("TurnAxis");
-        TurnAxis.AddBinding("<XRController>{RightHand}/thumbstick/x");
+        TurnAxis.AddBinding(VRConfig.HandedControlPath("<XRController>{RightHand}/thumbstick/x"));
 
         TurnAxisY = _map.AddAction("TurnAxisY");
-        TurnAxisY.AddBinding("<XRController>{RightHand}/thumbstick/y");
+        TurnAxisY.AddBinding(VRConfig.HandedControlPath("<XRController>{RightHand}/thumbstick/y"));
 
-        MoveAxis = _map.AddAction("MoveAxis", binding: "<XRController>{LeftHand}/thumbstick");
+        MoveAxis = _map.AddAction("MoveAxis", binding: VRConfig.HandedControlPath("<XRController>{LeftHand}/thumbstick"));
 
         LeftGrip     = _map.AddAction("LeftGrip",     binding: "<XRController>{LeftHand}/grip");
         RightGrip    = _map.AddAction("RightGrip",    binding: "<XRController>{RightHand}/grip");
         LeftTrigger  = _map.AddAction("LeftTrigger",  binding: "<XRController>{LeftHand}/trigger");
         RightTrigger = _map.AddAction("RightTrigger", binding: "<XRController>{RightHand}/trigger");
 
-        SprintButton = _map.AddAction("SprintButton", type: InputActionType.Button, binding: "<XRController>{LeftHand}/thumbstickClicked");
-        CrouchButton = _map.AddAction("CrouchButton", type: InputActionType.Button, binding: "<XRController>{RightHand}/thumbstickClicked");
-        Recenter     = _map.AddAction("Recenter",     type: InputActionType.Button, binding: "<XRController>{LeftHand}/secondaryButton");
+        SprintButton = _map.AddAction("SprintButton", type: InputActionType.Button, binding: VRConfig.HandedControlPath("<XRController>{LeftHand}/thumbstickClicked"));
+        CrouchButton = _map.AddAction("CrouchButton", type: InputActionType.Button, binding: VRConfig.HandedControlPath("<XRController>{RightHand}/thumbstickClicked"));
+        Recenter     = _map.AddAction("Recenter",     type: InputActionType.Button, binding: VRConfig.HandedControlPath("<XRController>{LeftHand}/secondaryButton"));
     }
 
     // Convenience reads — prefer Unity's XR InputDevices (reads the XR subsystem directly and always
@@ -110,12 +110,14 @@ public class VRActions
         return ReadQuat(fallback);
     }
 
-    public Vector3 MainHandPos => RightPos;
-    public Quaternion MainHandRot => RightRot;
-    public Vector3 OffHandPos => LeftPos;
-    public Quaternion OffHandRot => LeftRot;
-    public float OffHandGrip => LeftGrip.ReadValue<float>();
-    public float MainHandGrip => RightGrip.ReadValue<float>();
+    public Vector3 MainHandPos => VRConfig.IsLeftHanded ? LeftPos : RightPos;
+    public Quaternion MainHandRot => VRConfig.IsLeftHanded ? LeftRot : RightRot;
+    public Vector3 OffHandPos => VRConfig.IsLeftHanded ? RightPos : LeftPos;
+    public Quaternion OffHandRot => VRConfig.IsLeftHanded ? RightRot : LeftRot;
+    public float OffHandGrip => (VRConfig.IsLeftHanded ? RightGrip : LeftGrip).ReadValue<float>();
+    public float MainHandGrip => (VRConfig.IsLeftHanded ? LeftGrip : RightGrip).ReadValue<float>();
+
+    public InputAction MainTrigger => VRConfig.IsLeftHanded ? LeftTrigger : RightTrigger;
 
     private static Quaternion ReadQuat(InputAction a)
     {
