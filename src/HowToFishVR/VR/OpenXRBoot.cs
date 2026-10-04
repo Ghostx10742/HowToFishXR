@@ -40,6 +40,10 @@ public static class OpenXRBoot
             if (!InitAndStart())
                 return false;
 
+            // Repair the Input System/OpenXR "PoseControl" layout conflict before any controller
+            // device is built; without this, Valve Index controllers track but produce no input.
+            PoseControlLayoutFix.Install();
+
             // Keep XR alive when the game window loses focus.
             try
             {
