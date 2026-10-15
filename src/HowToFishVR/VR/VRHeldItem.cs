@@ -57,6 +57,7 @@ public class VRHeldItem : MonoBehaviour
     {
         var go = new GameObject("HowToFishVR HeldItem");
         DontDestroyOnLoad(go);
+        go.AddComponent<HeldItemMirrorLifecycle>();
         go.AddComponent<VRHeldItem>();
     }
 
@@ -125,8 +126,8 @@ public class VRHeldItem : MonoBehaviour
         {
             Transform parent = ht.Parent != null ? ht.Parent : held.transform;
             Vector3 worldPos = parent.TransformPoint(ht.HandPos);
-            Quaternion worldRot = parent.rotation * ht.HandRot;
-            localPos = held.transform.InverseTransformPoint(worldPos);
+            Quaternion worldRot = HeldItemMirror.HandRotation(parent, ht.HandRot);
+            localPos = HeldItemMirror.RootOffset(held, worldPos);
             localRot = Quaternion.Inverse(held.transform.rotation) * worldRot;
             return true;
         }
@@ -137,6 +138,7 @@ public class VRHeldItem : MonoBehaviour
     {
         try
         {
+            HeldItemMirror.Refresh();
             if (!Plugin.HeadsetActive) { RestoreLastHeld(); ClearSupportHandLatch(); return; } // no LIVE headset -> leave items to the game's own hold
             var rig = VRRig.Instance;
             if (rig == null || rig.RightHand == null || rig.LeftHand == null) { RestoreLastHeld(); ClearSupportHandLatch(); return; }
@@ -203,6 +205,8 @@ public class VRHeldItem : MonoBehaviour
             try { reviving = held is DeadPlayer rdp && rdp._isResurrecting; } catch { }
             var main = rig.MainHand;
             if (main == null) { RestoreLastHeld(); return; }
+            Vector3 mainAnchor = main.position;
+            Quaternion mainHandRotation = PlayerHandsPatches.MainHandGripRotation(main);
 
             if (reviving)
             {
@@ -226,6 +230,7 @@ public class VRHeldItem : MonoBehaviour
             // ONE-HAND. Mirror of the gun latch: pin the MAIN hand's grip to the main controller.
             try
             {
+                // Roles stay attached to their original authored grips inside the mirrored hierarchy.
                 var gripModel = held.HandModelRight;
                 bool mainHasPose = poseR;
                 var gripPose = lpR;
@@ -235,7 +240,7 @@ public class VRHeldItem : MonoBehaviour
                 if (gripModel != null)
                 {
                     Quaternion rot = main.rotation;
-                    Vector3 pos = main.position - rot * held.transform.InverseTransformPoint(gripModel.position);
+                    Vector3 pos = mainAnchor - rot * HeldItemMirror.RootOffset(held, gripModel.position);
                     held.transform.SetPositionAndRotation(pos, rot);
                     PinExplosiveLighter(rig, held);
                     return;
@@ -249,18 +254,18 @@ public class VRHeldItem : MonoBehaviour
                 // controller-driven rotation).
                 if (mainHasPose)
                 {
-                    Quaternion gripOffset = PlayerHandsPatches.RightGripOffset;
-                    Quaternion rot = (main.rotation * gripOffset) * Quaternion.Inverse(gripPoseRot);
-                    Vector3 pos = main.position - rot * gripPose;
+                    Quaternion rot = mainHandRotation * Quaternion.Inverse(gripPoseRot);
+                    Vector3 pos = mainAnchor - rot * gripPose;
                     held.transform.SetPositionAndRotation(pos, rot);
                     PinExplosiveLighter(rig, held);
                     return;
                 }
 
                 // 3) Last resort: carry the item in front of the hand (never centered inside it).
+                Quaternion fallbackRotation = main.rotation;
                 held.transform.SetPositionAndRotation(
-                    main.position + main.rotation * new Vector3(0f, -0.06f, 0.2f),
-                    main.rotation);
+                    mainAnchor + fallbackRotation * new Vector3(0f, -0.06f, 0.2f),
+                    fallbackRotation);
             }
             catch { }
             PinExplosiveLighter(rig, held);
@@ -290,7 +295,7 @@ public class VRHeldItem : MonoBehaviour
             var hands = p != null ? p.Hands : null;
             if (hands == null) return;
             const bool offIsLeft = true;
-            Transform offBone = hands.HandBoneLeft;
+            Transform offBone = VRConfig.IsLeftHanded ? hands.HandBoneRight : hands.HandBoneLeft;
             if (offBone == null) return;
 
             if (_lighterGripItem != ex)
@@ -306,12 +311,8 @@ public class VRHeldItem : MonoBehaviour
                     var ht = offIsLeft ? ex.HandTransformsLeft : ex.HandTransformsRight;
                     if (ht != null && ht.Exists && ht.Parent != null && ex._lighter.parent != null)
                     {
-                        Vector3 authoredHandPos = ht.Parent.TransformPoint(ht.HandPos);
-                        Quaternion authoredHandRot = ht.Parent.rotation * ht.HandRot;
-                        Vector3 authoredLighterPos = ex._lighter.parent.TransformPoint(ex._lighterOrigPos);
-                        Quaternion authoredLighterRot = ex._lighter.parent.rotation * ex._lighterOrigRot;
-                        _lighterFromHandPos = Quaternion.Inverse(authoredHandRot) * (authoredLighterPos - authoredHandPos);
-                        _lighterFromHandRot = Quaternion.Inverse(authoredHandRot) * authoredLighterRot;
+                        HeldItemMirror.CapturePartPose(ex, ex._lighter, ex._lighterOrigPos, ex._lighterOrigRot, ht,
+                            out _lighterFromHandPos, out _lighterFromHandRot);
                         _lighterFromHandValid = true;
                     }
                 }
@@ -320,15 +321,14 @@ public class VRHeldItem : MonoBehaviour
 
             if (_lighterFromHandValid)
             {
-                ex._lighter.SetPositionAndRotation(
-                    offBone.position + offBone.rotation * _lighterFromHandPos,
-                    offBone.rotation * _lighterFromHandRot);
+                HeldItemMirror.PlacePartFromHand(ex, ex._lighter, rig.OffHand, true,
+                    _lighterFromHandPos, _lighterFromHandRot);
             }
             else
             {
                 // Items without a valid authored left-hand pose still sit directly on the visible hand;
                 // importantly there is no second guessed rotation/translation layered on top.
-                ex._lighter.SetPositionAndRotation(offBone.position, offBone.rotation);
+                HeldItemMirror.SetPartPose(ex._lighter, offBone.position, offBone.rotation);
             }
         }
         catch { }
@@ -359,28 +359,29 @@ public class VRHeldItem : MonoBehaviour
                 return;
             }
 
-            var support = rig.LeftHand;
+            var support = rig.OffHand;
             if (support == null || support == rig.MainHand)
             {
                 _fishTwoHand = false;
                 return;
             }
 
-            float gripVal = VRActions.Instance.LeftGrip.ReadValue<float>();
+            float gripVal = VRActions.Instance.OffHandGrip;
             bool gripping = gripVal >= VRConfig.GripThreshold.Value;
 
-            // The authored LEFT grip in world space. Items without one remain one-handed.
+            // The authored support grip in world space. Items without one remain one-handed.
             Vector3 supportGripWorld;
             bool hasSupportGrip = false;
-            if (held.HandModelLeft != null)
+            Transform supportModel = held.HandModelLeft;
+            var supportPose = held.HandTransformsLeft;
+            if (supportModel != null)
             {
-                supportGripWorld = held.HandModelLeft.position;
+                supportGripWorld = supportModel.position;
                 hasSupportGrip = true;
             }
-            else if (held.HandTransformsLeft != null && held.HandTransformsLeft.Exists &&
-                     held.HandTransformsLeft.Parent != null)
+            else if (supportPose != null && supportPose.Exists && supportPose.Parent != null)
             {
-                supportGripWorld = held.HandTransformsLeft.Parent.TransformPoint(held.HandTransformsLeft.HandPos);
+                supportGripWorld = supportPose.Parent.TransformPoint(supportPose.HandPos);
                 hasSupportGrip = true;
             }
             else supportGripWorld = support.position;

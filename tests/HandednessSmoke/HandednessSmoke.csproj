@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/HowToFishVR/HowToFishVR.csproj" />
+    <Reference Include="../../lib/*.dll" Exclude="../../lib/Assembly-CSharp.dll;../../lib/FishNet.Runtime.dll"><Private>false</Private></Reference>
+    <Reference Include="../../lib/publicized/*.dll"><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

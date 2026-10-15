@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Mirror every locally held item's full hierarchy in left-handed mode, including models, attachments, animations, finger poses, muzzle direction, and reel movement. Reuse the original main/support grips and restore normal geometry on release; no per-item left-hand grip offsets.
+- Added a saved left-handed mode with mirrored default buttons, sticks, menu/keyboard pointing, tool handling, melee aim, throwing, and support-hand interactions. Toggle in VR Settings and restart.
+- Retained right-handed defaults, the existing multiplayer packet layout, and vanilla-client replication paths.
+- Honor launcher-provided OpenXR runtime overrides without starting the system SteamVR runtime, enabling simulator testing.
+
 All notable changes to HowToFishXR will be documented here.
 
 ## 1.3.0

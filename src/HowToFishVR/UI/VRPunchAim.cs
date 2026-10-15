@@ -41,7 +41,7 @@ public sealed class VRPunchAim : MonoBehaviour
 
     private void Build()
     {
-        _visualRoot = new GameObject("SegmentedRightHandPunchGuide");
+        _visualRoot = new GameObject("SegmentedMainHandPunchGuide");
         _visualRoot.layer = 5;
         _visualRoot.transform.SetParent(transform, false);
 
@@ -83,7 +83,7 @@ public sealed class VRPunchAim : MonoBehaviour
 
     private void Update()
     {
-        bool triggerNow = ReadRightTrigger() >= TriggerThreshold;
+        bool triggerNow = ReadMainTrigger() >= TriggerThreshold;
         bool eligible = CanShowForCurrentState(out _);
         bool guideEnabled = true;
         try { guideEnabled = VRConfig.MeleeAimGuide == null || VRConfig.MeleeAimGuide.Value; } catch { }
@@ -118,7 +118,7 @@ public sealed class VRPunchAim : MonoBehaviour
     {
         if (_visualRoot == null || !_visualRoot.activeSelf) return;
         if (!CanShowForCurrentState(out _) ||
-            !PunchPatches.TryGetRightHandAim(out Vector3 origin, out Vector3 direction))
+            !PunchPatches.TryGetMainHandAim(out Vector3 origin, out Vector3 direction))
         {
             SetVisible(false);
             return;
@@ -186,16 +186,16 @@ public sealed class VRPunchAim : MonoBehaviour
         }
     }
 
-    private static float ReadRightTrigger()
+    private static float ReadMainTrigger()
     {
         try
         {
-            if (VRActions.Instance != null) return VRActions.Instance.RightTrigger.ReadValue<float>();
+            if (VRActions.Instance != null) return VRActions.Instance.MainTrigger.ReadValue<float>();
         }
         catch { }
         try
         {
-            var device = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.RightHand);
+            var device = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(VRConfig.MainHandNode);
             if (device.isValid && device.TryGetFeatureValue(UnityEngine.XR.CommonUsages.trigger, out float value))
                 return value;
         }

@@ -28,6 +28,14 @@ HowToFishXR is completely free, and donating is entirely optional. Nothing is lo
 
 ## Controls
 
+### Left-handed mode
+
+Enable **Left Handed (restart required)** in **VR Settings**, then restart the game. You can also set `Left Handed = true` under `[General]` in `BepInEx/config/com.jaxon.howtofishvr.cfg`. Right-handed mode remains the default.
+
+All controls below describe right-handed mode. In left-handed mode, swap **left and right** throughout: the right stick moves/sprints, the left stick turns/scrolls/crouches, the left trigger fires/reels/clicks menus, and the right trigger casts. Left grip interacts; right grip supports/inspects. X jumps, Y changes bait, A reloads, B pauses, and right grip + Y drops/throws. Tools, melee aim, throwing, the menu laser, and the keyboard pointer follow the left hand. Both-stick and keyboard shortcuts stay the same.
+
+The selected mode applies on the next launch, including when changed in the pause menu. Every locally held item is mirrored as a complete hierarchy, including weapons, rods, attachments, animations, and hand poses. The original main grip moves to your left hand; the support grip and reel move to your right. Items return to their normal shape when released. Multiplayer uses the existing protocol and anatomical left/right pose fields; unmodified and older clients retain their normal item visuals and replication.
+
 Button names use the familiar Meta/PICO layout. Valve Index, Vive, WMR, and other OpenXR controllers use the equivalent primary and secondary buttons for each hand.
 
 | Input | Action |
@@ -132,6 +140,7 @@ Open the native-styled **VR Settings** page from the main menu or pause menu. Yo
 
 | Setting | What it changes |
 |---|---|
+| Left Handed | Mirror hand roles and default controls; restart required |
 | Body | Full Body IK or Hands Only |
 | Turning | None, Snap, or Smooth turning |
 | Snap Angle | Degrees rotated per snap turn |
@@ -144,7 +153,7 @@ Open the native-styled **VR Settings** page from the main menu or pause menu. Yo
 | Death View | First-person ragdoll view or head-tracked third-person view |
 | Calibrate | Starts the guided standing T-pose calibration |
 
-Dominant-hand, HUD-distance, VR post-processing, hand position/rotation, height-offset, and motion-vignette controls are intentionally not present. The primary hand is permanently right, HUD distance and hand calibration use their tested values, the tested VR visual-effects path is always used, player height uses the game's native height, and there is no forced motion vignette.
+HUD-distance, VR post-processing, hand position/rotation, height-offset, and motion-vignette controls are intentionally not present. HUD distance and hand calibration use their tested values, the tested VR visual-effects path is always used, player height uses the game's native height, and there is no forced motion vignette.
 
 ### Advanced BepInEx settings
 

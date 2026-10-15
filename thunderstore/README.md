@@ -22,6 +22,14 @@ HowToFishXR is completely free and nothing is locked behind payment. Donations a
 
 ## Controls
 
+### Left-handed mode
+
+Enable **Left Handed (restart required)** in **VR Settings**, then restart the game. You can also set `Left Handed = true` under `[General]` in `BepInEx/config/com.jaxon.howtofishvr.cfg`. Right-handed mode remains the default.
+
+All controls below describe right-handed mode. In left-handed mode, swap **left and right** throughout: the right stick moves/sprints, the left stick turns/scrolls/crouches, the left trigger fires/reels/clicks menus, and the right trigger casts. Left grip interacts; right grip supports/inspects. X jumps, Y changes bait, A reloads, B pauses, and right grip + Y drops/throws. Tools, melee aim, throwing, the menu laser, and the keyboard pointer follow the left hand. Both-stick and keyboard shortcuts stay the same.
+
+The selected mode applies on the next launch, including when changed in the pause menu. Every locally held item is mirrored as a complete hierarchy, including weapons, rods, attachments, animations, and hand poses. The original main grip moves to your left hand; the support grip and reel move to your right. Items return to their normal shape when released. Multiplayer uses the existing protocol and anatomical left/right pose fields; unmodified and older clients retain their normal item visuals and replication.
+
 | Input | Action |
 |---|---|
 | Left stick | Move; steer and control throttle while driving |

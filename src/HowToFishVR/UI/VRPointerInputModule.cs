@@ -94,7 +94,7 @@ internal sealed class VRPointerInputModule : BaseInputModule
     public override void Process()
     {
         if (!EnsureSetup()) return;
-        bool rightDown = ReadTrigger(XRNode.RightHand, _rightHeld);
+        bool rightDown = ReadTrigger(VRConfig.MainHandNode, _rightHeld);
         if (!_laserActive)
         {
             if (_lastTrigger) ReleasePointer();
@@ -137,7 +137,7 @@ internal sealed class VRPointerInputModule : BaseInputModule
     {
         var rig = VR.VRRig.Instance;
         if (rig == null) return;
-        var hand = rig.RightHand;
+        var hand = rig.MainHand;
         if (hand == null) return;
         _rayOrigin.SetPositionAndRotation(hand.position, hand.rotation * VRLaser.PointerTilt);
         if (!_cameraFrozen)

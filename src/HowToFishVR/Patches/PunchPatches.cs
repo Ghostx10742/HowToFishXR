@@ -5,7 +5,7 @@ using UnityEngine;
 namespace HowToFishVR.Patches;
 
 /// <summary>
-/// Makes empty-hand punching originate from the calibrated right hand and use the same corrected
+/// Makes empty-hand punching originate from the calibrated main hand and use the same corrected
 /// controller-forward axis as VR throwing. The game's original 1.5 m ray is too short for common VR
 /// poses such as pointing down at a crab from standing height, so VR targeting receives a 3 m minimum
 /// while preserving the game's sphere radius, obstruction checks, damage, timing, and effects.
@@ -40,21 +40,21 @@ internal static class PunchPatches
         internal bool RangeChanged;
     }
 
-    /// <summary>Temporarily put the game's camera-based melee calculations on the current right-hand
+    /// <summary>Temporarily put the game's camera-based melee calculations on the current main-hand
     /// pose. The 45-degree correction is deliberately identical to hand-directed throwing: OpenXR's
     /// raw grip-forward axis is not the natural direction in which the palm points.</summary>
-    internal static CameraPoseState BeginRightHandAim(Transform camera)
+    internal static CameraPoseState BeginMainHandAim(Transform camera)
     {
         var state = new CameraPoseState { Camera = camera };
         if (!Plugin.HeadsetActive || camera == null) return state;
         try
         {
             var rig = VRRig.Instance;
-            var hand = rig != null ? rig.RightHand : null;
+            var hand = rig != null ? rig.MainHand : null;
             if (hand == null) return state;
             state.Position = camera.position;
             state.Rotation = camera.rotation;
-            if (!TryGetRightHandAim(out Vector3 origin, out Vector3 direction)) return state;
+            if (!TryGetMainHandAim(out Vector3 origin, out Vector3 direction)) return state;
             camera.SetPositionAndRotation(origin, Quaternion.LookRotation(direction, hand.rotation * Vector3.up));
             state.Changed = true;
         }
@@ -62,7 +62,7 @@ internal static class PunchPatches
         return state;
     }
 
-    internal static bool TryGetRightHandAim(out Vector3 origin, out Vector3 direction)
+    internal static bool TryGetMainHandAim(out Vector3 origin, out Vector3 direction)
     {
         origin = Vector3.zero;
         direction = Vector3.forward;
@@ -70,9 +70,9 @@ internal static class PunchPatches
         try
         {
             var rig = VRRig.Instance;
-            var hand = rig != null ? rig.RightHand : null;
+            var hand = rig != null ? rig.MainHand : null;
             if (hand == null) return false;
-            origin = PlayerHandsPatches.CalibratedHandPosition(hand, isLeft: false);
+            origin = PlayerHandsPatches.CalibratedHandPosition(hand, isLeft: VRConfig.IsLeftHanded);
             direction = hand.rotation * Quaternion.Euler(45f, 0f, 0f) * Vector3.forward;
             if (direction.sqrMagnitude < 1e-6f) return false;
             direction.Normalize();
@@ -81,17 +81,17 @@ internal static class PunchPatches
         catch { return false; }
     }
 
-    internal static void EndRightHandAim(CameraPoseState state)
+    internal static void EndMainHandAim(CameraPoseState state)
     {
         if (!state.Changed || state.Camera == null) return;
         try { state.Camera.SetPositionAndRotation(state.Position, state.Rotation); } catch { }
     }
 
-    internal static TargetAimState BeginRightHandTarget(Transform camera, ref float range)
+    internal static TargetAimState BeginMainHandTarget(Transform camera, ref float range)
     {
         var state = new TargetAimState
         {
-            CameraPose = BeginRightHandAim(camera),
+            CameraPose = BeginMainHandAim(camera),
             OriginalRange = range
         };
         if (!state.CameraPose.Changed) return state;
@@ -103,10 +103,10 @@ internal static class PunchPatches
         return state;
     }
 
-    internal static void EndRightHandTarget(ref float range, TargetAimState state)
+    internal static void EndMainHandTarget(ref float range, TargetAimState state)
     {
         if (state.RangeChanged) range = state.OriginalRange;
-        EndRightHandAim(state.CameraPose);
+        EndMainHandAim(state.CameraPose);
     }
 
     /// <summary>The base game sphere-casts for items but uses a zero-width ray for NPCs and the level.
@@ -457,7 +457,7 @@ internal static class PunchPatches
             }
         }
         catch { }
-        if (!TryGetRightHandAim(out Vector3 origin, out Vector3 direction)) return;
+        if (!TryGetMainHandAim(out Vector3 origin, out Vector3 direction)) return;
         if (!TryFindCreatureAlongAim(attacker, origin, direction,
                 Mathf.Max(MinimumVRAimAssistRadius, authoredRadius),
                 Mathf.Max(MinimumVRPunchRange, range), groundOnly: false,
@@ -471,7 +471,7 @@ internal static class PunchPatches
     /// animates and syncs; its later HitTarget is consumed so this cannot deal double damage.</summary>
     internal static void DirectGroundCreatureHit(Player attacker, int damage, float forceMagnitude)
     {
-        if (attacker == null || !TryGetRightHandAim(out Vector3 origin, out Vector3 direction)) return;
+        if (attacker == null || !TryGetMainHandAim(out Vector3 origin, out Vector3 direction)) return;
         if (!TryFindCreatureAlongAim(attacker, origin, direction, MinimumVRAimAssistRadius,
                 MinimumVRPunchRange, groundOnly: true, out Transform target, out Vector3 point)) return;
         Creature creature = ResolveCreature(target);
@@ -618,7 +618,7 @@ internal static class PunchPatches
         if (ConsumeDirectGroundCreatureHit(__instance._curTarget[side])) return false;
         if (IsLocalPuncher(__instance))
         {
-            __state = BeginRightHandAim(__instance._player != null ? __instance._player.CamObject : null);
+            __state = BeginMainHandAim(__instance._player != null ? __instance._player.CamObject : null);
             int damage = ServerSettings.OneShotEnabled ? 99999 : __instance._damage;
             if (TryHitCreatureDirect(__instance._curTarget[side], __instance._targetHitPoint[side],
                     __instance._player, damage, __instance._force))
@@ -629,7 +629,7 @@ internal static class PunchPatches
 
     [HarmonyPostfix]
     [HarmonyPatch("HitTarget")]
-    private static void RestoreAfterHit(CameraPoseState __state) => EndRightHandAim(__state);
+    private static void RestoreAfterHit(CameraPoseState __state) => EndMainHandAim(__state);
 
     [HarmonyPrefix]
     [HarmonyPatch("PunchInput")]
@@ -682,7 +682,7 @@ internal static class PunchPatches
         __state = default;
         if (!IsLocalPuncher(__instance)) return;
         Transform cam = __instance._player != null ? __instance._player.CamObject : null;
-        __state = BeginRightHandTarget(cam, ref __instance._range);
+        __state = BeginMainHandTarget(cam, ref __instance._range);
     }
 
     [HarmonyPostfix]
@@ -696,7 +696,7 @@ internal static class PunchPatches
         if (__state.CameraPose.Changed)
             PreferAssistedTarget(__instance._player, __instance._player.CamObject, __instance._hitRadius,
                 __instance._range, __instance._hitOffsetDist, ref finalTarget, ref finalHitPoint);
-        EndRightHandTarget(ref __instance._range, __state);
+        EndMainHandTarget(ref __instance._range, __state);
     }
 
     [HarmonyPrefix]
@@ -706,7 +706,7 @@ internal static class PunchPatches
         __state = default;
         if (!IsLocalPuncher(__instance)) return;
         Transform cam = __instance._player != null ? __instance._player.CamObject : null;
-        __state = BeginRightHandTarget(cam, ref __instance._range);
+        __state = BeginMainHandTarget(cam, ref __instance._range);
     }
 
     [HarmonyPostfix]
@@ -720,7 +720,7 @@ internal static class PunchPatches
         if (__state.CameraPose.Changed)
             PreferAssistedTarget(__instance._player, __instance._player.CamObject, __instance._hitRadius,
                 __instance._range, __instance._hitOffsetDist, ref finalTarget, ref finalHitPoint);
-        EndRightHandTarget(ref __instance._range, __state);
+        EndMainHandTarget(ref __instance._range, __state);
     }
 }
 
@@ -745,7 +745,7 @@ internal static class HandMeleeAimPatches
     {
         __state = default;
         if (!IsLocalHandMelee(__instance)) return;
-        __state = PunchPatches.BeginRightHandTarget(__instance.Holder.CamObject, ref __instance._range);
+        __state = PunchPatches.BeginMainHandTarget(__instance.Holder.CamObject, ref __instance._range);
     }
 
     [HarmonyPostfix]
@@ -760,7 +760,7 @@ internal static class HandMeleeAimPatches
             PunchPatches.PreferAssistedTarget(__instance.Holder, __instance.Holder.CamObject,
                 __instance._hitRadius, __instance._range, __instance._hitOffsetDist,
                 ref finalTarget, ref finalHitPoint);
-        PunchPatches.EndRightHandTarget(ref __instance._range, __state);
+        PunchPatches.EndMainHandTarget(ref __instance._range, __state);
     }
 
     [HarmonyPrefix]
@@ -769,7 +769,7 @@ internal static class HandMeleeAimPatches
     {
         __state = default;
         if (!IsLocalHandMelee(__instance)) return;
-        __state = PunchPatches.BeginRightHandTarget(__instance.Holder.CamObject, ref __instance._range);
+        __state = PunchPatches.BeginMainHandTarget(__instance.Holder.CamObject, ref __instance._range);
     }
 
     [HarmonyPostfix]
@@ -784,7 +784,7 @@ internal static class HandMeleeAimPatches
             PunchPatches.PreferAssistedTarget(__instance.Holder, __instance.Holder.CamObject,
                 __instance._hitRadius, __instance._range, __instance._hitOffsetDist,
                 ref finalTarget, ref finalHitPoint);
-        PunchPatches.EndRightHandTarget(ref __instance._range, __state);
+        PunchPatches.EndMainHandTarget(ref __instance._range, __state);
     }
 
     [HarmonyPrefix]
@@ -795,7 +795,7 @@ internal static class HandMeleeAimPatches
         if (!IsLocalHandMelee(__instance)) return true;
         if (__instance._curTarget != null && side >= 0 && side < __instance._curTarget.Length &&
             PunchPatches.ConsumeDirectGroundCreatureHit(__instance._curTarget[side])) return false;
-        __state = PunchPatches.BeginRightHandAim(__instance.Holder.CamObject);
+        __state = PunchPatches.BeginMainHandAim(__instance.Holder.CamObject);
         if (__instance._curTarget != null && side >= 0 && side < __instance._curTarget.Length)
         {
             int damage = ServerSettings.OneShotEnabled ? 99999 : __instance.GetCurSharpness().Damage;
@@ -810,7 +810,7 @@ internal static class HandMeleeAimPatches
     [HarmonyPostfix]
     [HarmonyPatch("HitTarget")]
     private static void HitAimPostfix(PunchPatches.CameraPoseState __state) =>
-        PunchPatches.EndRightHandAim(__state);
+        PunchPatches.EndMainHandAim(__state);
 
     [HarmonyPrefix]
     [HarmonyPatch("PrimaryInput")]

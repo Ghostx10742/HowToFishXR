@@ -104,6 +104,9 @@ public static class Preload
 
     private static string GetActiveOpenXrRuntime()
     {
+        // A per-process simulator/custom runtime must not cold-start the system's SteamVR.
+        string runtimeOverride = System.Environment.GetEnvironmentVariable("XR_RUNTIME_JSON");
+        if (!string.IsNullOrWhiteSpace(runtimeOverride)) return runtimeOverride;
         const uint RrfRegSz = 0x00000002;
         uint bytes = 0;
         int result = RegGetValue(HkeyLocalMachine, @"SOFTWARE\Khronos\OpenXR\1", "ActiveRuntime",

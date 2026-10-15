@@ -1,5 +1,6 @@
 using HarmonyLib;
 using HowToFishVR.VR;
+using System.Reflection;
 using UnityEngine;
 
 namespace HowToFishVR.Patches;
@@ -35,6 +36,93 @@ internal static class PlayerHandsPatches
         if (controller == null) return Vector3.zero;
         Vector3 offset = isLeft ? LeftHandPositionOffset : RightHandPositionOffset;
         return controller.position + controller.rotation * offset;
+    }
+
+    /// <summary>
+    /// The wrist basis for the hand currently designated as the gameplay main hand. Item prefabs store
+    /// their primary grip as the authored right-hand pose, but that pose must be aligned to the physical
+    /// left wrist in left-handed mode. Using the right-hand basis on a left controller rotates its local
+    /// grip offset sideways, which leaves items hovering beside the palm.
+    /// </summary>
+    internal static Quaternion MainHandGripRotation(Transform controller)
+    {
+        if (controller == null) return Quaternion.identity;
+        return controller.rotation * (VRConfig.IsLeftHanded ? LeftGripOffset : RightGripOffset);
+    }
+
+    internal static Quaternion MirrorAcrossLocalZ(Quaternion q)
+    {
+        return Quaternion.Normalize(new Quaternion(-q.x, -q.y, q.z, q.w));
+    }
+
+    private static readonly FieldInfo RightFingersField = AccessTools.Field(typeof(PlayerHands), "_fingerTransformsRight");
+    private static readonly FieldInfo LeftFingersField = AccessTools.Field(typeof(PlayerHands), "_fingerTransformsLeft");
+    private static readonly FieldInfo RightOpenPoseField = AccessTools.Field(typeof(PlayerHands), "_handTransformsOrigRight");
+    private static readonly FieldInfo LeftOpenPoseField = AccessTools.Field(typeof(PlayerHands), "_handTransformsOrigLeft");
+
+    private static void SetFingers(Transform[] bones, Quaternion[] pose)
+    {
+        if (bones == null || pose == null || pose.Length < bones.Length) return;
+        for (int i = 0; i < bones.Length; i++)
+            if (bones[i] != null) bones[i].localRotation = pose[i];
+    }
+
+    private static void MirrorFingers(Transform[] targetBones, Quaternion[] sourcePose)
+    {
+        if (targetBones == null || sourcePose == null || sourcePose.Length < targetBones.Length) return;
+        for (int i = 0; i < targetBones.Length; i++)
+        {
+            if (targetBones[i] == null) continue;
+            targetBones[i].localRotation = MirrorAcrossLocalZ(sourcePose[i]);
+        }
+    }
+
+    private static bool MirrorAnimatedFingers(Transform marker, Transform[] targetBones)
+    {
+        if (marker == null || targetBones == null || marker.childCount * 3 != targetBones.Length) return false;
+        for (int finger = 0; finger < marker.childCount; finger++)
+        {
+            Transform bone = marker.GetChild(finger);
+            for (int joint = 0; joint < 3; joint++)
+            {
+                if (bone == null || targetBones[finger * 3 + joint] == null) return false;
+                targetBones[finger * 3 + joint].localRotation = MirrorAcrossLocalZ(bone.localRotation);
+                bone = bone.childCount > 0 ? bone.GetChild(0) : null;
+            }
+        }
+        return true;
+    }
+
+    private static void PoseLeftHandedFingers(PlayerHands hands, Item held)
+    {
+        if (!VRConfig.IsLeftHanded || held == null) return;
+        try
+        {
+            var rightBones = (Transform[])RightFingersField.GetValue(hands);
+            var leftBones = (Transform[])LeftFingersField.GetValue(hands);
+            var rightOpen = ((HandTransforms)RightOpenPoseField.GetValue(hands))?.FingerRots;
+            var leftOpen = ((HandTransforms)LeftOpenPoseField.GetValue(hands))?.FingerRots;
+            var rightGrip = held != null ? held.HandTransformsRight : null;
+            var leftGrip = held != null ? held.HandTransformsLeft : null;
+
+            // Item prefabs animate the anatomical right fingers even when the left controller is
+            // the main hand. Transfer the authored curl relative to each hand's own open pose.
+            bool liveMain = held != null && held.Tool != null &&
+                MirrorAnimatedFingers(held.HandModelRight, leftBones);
+            if (!liveMain && rightGrip != null && rightGrip.Exists)
+                MirrorFingers(leftBones, rightGrip.FingerRots);
+            else if (!liveMain) SetFingers(leftBones, leftOpen);
+
+            // The physical right hand is free unless it has actually latched to a support grip.
+            bool supporting = PlayerToolMovementPatches.OffHandGripTarget != null ||
+                VRHeldItem.FishTwoHand || held is Explosive || (held is Melee melee && melee._useBothHands);
+            bool liveOff = supporting && held != null && held.Tool != null &&
+                MirrorAnimatedFingers(held.HandModelLeft, rightBones);
+            if (!liveOff && supporting && leftGrip != null && leftGrip.Exists)
+                MirrorFingers(rightBones, leftGrip.FingerRots);
+            else if (!liveOff) SetFingers(rightBones, rightOpen);
+        }
+        catch { }
     }
 
     private static Quaternion MirrorAcrossSagittalPlane(Quaternion q)
@@ -101,8 +189,8 @@ internal static class PlayerHandsPatches
         var gripTarget = PlayerToolMovementPatches.OffHandGripTarget;
         if (gripTarget != null)
         {
-            var offBone = lb;
-            if (offBone != null) offBone.SetPositionAndRotation(gripTarget.position, gripTarget.rotation);
+            var offBone = VRConfig.IsLeftHanded ? rb : lb;
+            if (offBone != null) offBone.SetPositionAndRotation(gripTarget.position, HeldItemMirror.HandRotation(gripTarget));
         }
 
         // The MAIN hand snaps to the gun's main grip (one-hand AND two-hand). While two-handing, the off
@@ -120,8 +208,13 @@ internal static class PlayerHandsPatches
             }
             else
             {
-                var mainBone = rb;
-                if (mainBone != null) mainBone.SetPositionAndRotation(mainGripTarget.position, mainGripTarget.rotation);
+                var mainBone = VRConfig.IsLeftHanded ? lb : rb;
+                // In left-handed mode FollowHand already rotated the authored grip onto the left
+                // wrist. Applying another handedness correction here would twist the visible hand.
+                if (mainBone != null)
+                {
+                    mainBone.SetPositionAndRotation(mainGripTarget.position, HeldItemMirror.HandRotation(mainGripTarget));
+                }
             }
         }
 
@@ -148,7 +241,7 @@ internal static class PlayerHandsPatches
                     dp._isResurrecting && dp._slapHandAnim.transform != null)
                 {
                     const bool offIsLeft = true;
-                    var offBone = lb;
+                    var offBone = VRConfig.IsLeftHanded ? rb : lb;
                     var slapT = dp._slapHandAnim.transform;
                     if (offBone != null && slapT != null)
                     {
@@ -174,31 +267,43 @@ internal static class PlayerHandsPatches
                             // animation jump can't drag the hand off the body).
                             Vector3 motion = slapT.position - _slapRestPos;
                             if (motion.magnitude > 0.35f) motion = motion.normalized * 0.35f;
-                            offBone.SetPositionAndRotation(bodyGrip + motion, slapT.rotation);
+                            offBone.SetPositionAndRotation(bodyGrip + motion, HeldItemMirror.HandRotation(slapT));
                         }
                         else
                         {
                             // No authored left grip on the body: fall back to riding the slap hand.
-                            offBone.SetPositionAndRotation(slapT.position, slapT.rotation);
+                            offBone.SetPositionAndRotation(slapT.position, HeldItemMirror.HandRotation(slapT));
                         }
                     }
                 }
                 else if (VRHeldItem.FishTwoHand)
                 {
                     _slapRestInit = false; // revive ended / not reviving -> re-arm the slap-motion capture
-                    if (rb != null && held.HandTransformsRight != null && held.HandTransformsRight.Parent != null)
-                        rb.position = held.HandTransformsRight.Parent.TransformPoint(held.HandTransformsRight.HandPos);
-                    if (lb != null && held.HandTransformsLeft != null && held.HandTransformsLeft.Parent != null)
-                        lb.position = held.HandTransformsLeft.Parent.TransformPoint(held.HandTransformsLeft.HandPos);
+                    var mainBone = VRConfig.IsLeftHanded ? lb : rb;
+                    var offBone = VRConfig.IsLeftHanded ? rb : lb;
+                    var mainPose = held.HandTransformsRight;
+                    var offPose = held.HandTransformsLeft;
+                    if (mainBone != null && mainPose != null && mainPose.Exists && mainPose.Parent != null)
+                        mainBone.position = mainPose.Parent.TransformPoint(mainPose.HandPos);
+                    if (offBone != null && offPose != null && offPose.Exists && offPose.Parent != null)
+                        offBone.position = offPose.Parent.TransformPoint(offPose.HandPos);
                 }
                 else
                 {
-                    var mainBone = rb;
+                    var mainBone = VRConfig.IsLeftHanded ? lb : rb;
                     var ht = held.HandTransformsRight;
                     if (ht != null && ht.Exists && ht.Parent != null && mainBone != null)
                         mainBone.position = ht.Parent.TransformPoint(ht.HandPos);
                 }
             }
+        }
+        catch { }
+
+        try
+        {
+            var held = __instance._player != null && __instance._player.Holding != null
+                ? __instance._player.Holding.HeldItem : null;
+            PoseLeftHandedFingers(__instance, held);
         }
         catch { }
 

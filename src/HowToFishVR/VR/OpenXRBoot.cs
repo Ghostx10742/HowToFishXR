@@ -181,8 +181,8 @@ public static class OpenXRBoot
         TrySetXRGeneralSettingsInstance(_general);
         AccessTools.Field(typeof(XRGeneralSettings), "m_InitManagerOnStart")?.SetValue(_general, true);
 
-        // Use the system default OpenXR runtime.
-        Environment.SetEnvironmentVariable("XR_RUNTIME_JSON", null);
+        // Honor a launcher-provided runtime (e.g. xr-sim). With no override the OpenXR loader
+        // selects the system default; never change the machine-wide runtime for testing.
 
         // RepoXR's proven Unity-6 sequence: XRGeneralSettings.InitXRSDK() then .Start() (both private).
         InvokePrivate(_general, "InitXRSDK");

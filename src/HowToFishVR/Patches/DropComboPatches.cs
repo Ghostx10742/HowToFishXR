@@ -73,7 +73,7 @@ internal static class DropComboPatches
             Vector3 releaseVelocity = Vector3.zero;
             bool haveVelocity = false;
 
-            var node = UnityEngine.XR.XRNode.RightHand;
+            var node = VRConfig.MainHandNode;
             var device = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(node);
             if (device.isValid && device.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceVelocity, out var localVelocity))
             {
